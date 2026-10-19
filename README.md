@@ -11,6 +11,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+## Progressive web app
+
+The production app includes an installable web app manifest and registers a service worker for offline access. Previously visited pages and their Next.js static assets are cached when available; if a page has not been cached, the app displays an offline page. Service workers are disabled in development to avoid interfering with the Next.js dev server.
+
 ## Available routes
 
 - `/` — landing page, benefits, workflow, sample templates, proposed plans, sample testimonials, and FAQ

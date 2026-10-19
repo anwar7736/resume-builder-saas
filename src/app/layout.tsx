@@ -1,7 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
+import { PwaInstallPrompt } from "@/components/layout/pwa-install-prompt";
+import { PwaRegistration } from "@/components/layout/pwa-registration";
 import { RouteTransition } from "@/components/layout/route-transition";
 import { SupportButton } from "@/components/layout/support-button";
 import "./globals.css";
@@ -17,6 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  applicationName: "ResumeCraft AI",
   title: {
     default: "ResumeCraft AI — Build a Resume That Gets You Hired",
     template: "%s | ResumeCraft AI",
@@ -30,6 +33,15 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "ResumeCraft AI",
   },
+  appleWebApp: {
+    capable: true,
+    title: "ResumeCraft",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#5c4bd8",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -40,11 +52,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <PwaRegistration />
         <RouteTransition />
         <Navbar />
         <main className="flex-1">{children}</main>
         <Footer />
         <SupportButton />
+        <PwaInstallPrompt />
       </body>
     </html>
   );

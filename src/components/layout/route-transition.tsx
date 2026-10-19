@@ -8,7 +8,6 @@ export function RouteTransition() {
   const pathname = usePathname();
   const previousPathname = useRef(pathname);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const delayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finishRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fallbackRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeRef = useRef(false);
@@ -24,11 +23,9 @@ export function RouteTransition() {
   useEffect(() => {
     const clearTimers = () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (delayRef.current) clearTimeout(delayRef.current);
       if (finishRef.current) clearTimeout(finishRef.current);
       if (fallbackRef.current) clearTimeout(fallbackRef.current);
       intervalRef.current = null;
-      delayRef.current = null;
       finishRef.current = null;
       fallbackRef.current = null;
     };
@@ -37,7 +34,6 @@ export function RouteTransition() {
       if (!activeRef.current) return;
       activeRef.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
-      if (delayRef.current) clearTimeout(delayRef.current);
       if (fallbackRef.current) clearTimeout(fallbackRef.current);
       setProgress(100);
       setLoaderVisible(false);
@@ -53,9 +49,8 @@ export function RouteTransition() {
       if (finishRef.current) clearTimeout(finishRef.current);
       activeRef.current = true;
       setActive(true);
-      setLoaderVisible(false);
+      setLoaderVisible(true);
       setProgress(8);
-      delayRef.current = setTimeout(() => setLoaderVisible(true), 180);
       intervalRef.current = setInterval(() => {
         setProgress((current) => Math.min(current + Math.max(1, (90 - current) * 0.12), 90));
       }, 180);
@@ -103,7 +98,6 @@ export function RouteTransition() {
 
     activeRef.current = false;
     if (intervalRef.current) clearInterval(intervalRef.current);
-    if (delayRef.current) clearTimeout(delayRef.current);
     if (fallbackRef.current) clearTimeout(fallbackRef.current);
     fallbackRef.current = null;
     setProgress(100);
