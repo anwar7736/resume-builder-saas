@@ -5,11 +5,11 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "ResumeCraft AI",
     short_name: "ResumeCraft",
     description:
-      "Create a polished, ATS-friendly resume with professional templates and thoughtful writing guidance.",
+      "Share your career information for your next resume request.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fbfaf8",
-    theme_color: "#5c4bd8",
+    background_color: "#17191f",
+    theme_color: "#17191f",
     icons: [
       {
         src: "/icon-192x192.png",

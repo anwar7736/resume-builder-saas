@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -126,7 +126,7 @@ export function RouteTransition() {
         <div className={`route-loader${loaderVisible ? " is-visible" : ""}`} role="status" aria-label="Loading page" aria-live="polite">
           <div className="route-loader-indicator" aria-hidden="true">
             <span className="route-loader-orbit"><i /></span>
-            <span className="route-loader-core"><FileText size={24} strokeWidth={1.8} /></span>
+            <span className="route-loader-core"><Sparkles size={24} strokeWidth={1.8} /></span>
             <span className="route-loader-spark" />
           </div>
         </div>

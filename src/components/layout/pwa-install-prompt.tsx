@@ -2,6 +2,7 @@
 
 import { Download, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/toast-provider";
 
 interface InstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,8 +12,8 @@ interface InstallPromptEvent extends Event {
 export function PwaInstallPrompt() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const [installError, setInstallError] = useState(false);
   const [installed, setInstalled] = useState(false);
+  const toast = useToast();
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event: Event) => {
@@ -43,7 +44,7 @@ export function PwaInstallPrompt() {
       setInstallPrompt(null);
     } catch (error) {
       console.error("Unable to show the PWA install prompt.", error);
-      setInstallError(true);
+      toast.error("Installation could not be started. Try your browser menu instead.");
     }
   };
 
@@ -53,11 +54,7 @@ export function PwaInstallPrompt() {
     <aside className="pwa-install" aria-label="Install ResumeCraft">
       <div className="pwa-install-copy">
         <strong>Take ResumeCraft with you</strong>
-        <span>
-          {installError
-            ? "Installation could not be started. Try your browser menu instead."
-            : "Install the app for quick access from your home screen."}
-        </span>
+        <span>Install the app for quick access from your home screen.</span>
       </div>
       <button className="pwa-install-action" type="button" onClick={install}>
         <Download size={16} aria-hidden="true" />

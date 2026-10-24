@@ -1,0 +1,39 @@
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { AccountActions } from "@/components/account/account-actions";
+import { getResumeRequests, getSiteContent } from "@/lib/resume-store";
+import { getCurrentUser } from "@/lib/user-auth";
+
+export const metadata: Metadata = { title: "My account" };
+
+export default function AccountPage() {
+  return <Suspense fallback={<main className="content-loading" aria-label="Loading account" />}>
+    <AccountPageContent />
+  </Suspense>;
+}
+
+async function AccountPageContent() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login?next=/account");
+  const [requests, content] = await Promise.all([getResumeRequests(user.id), getSiteContent()]);
+  const planName = content.plans.find((plan) => plan.id === user.plan)?.name ?? user.plan;
+  return <section className="container account-page">
+    <header className="account-heading">
+      <div><span className="eyebrow">Your workspace</span><h1 className="heading">Welcome back, {user.name}.</h1><p className="subheading">{user.email}</p></div>
+      <AccountActions />
+    </header>
+    <div className="account-summary">
+      <article className="card account-stat"><span>Current plan</span><strong>{planName}</strong><Link href="/pricing">View plans</Link></article>
+      <article className="card account-stat"><span>Resume requests</span><strong>{user.resumeCount}</strong><small>Used so far</small></article>
+      <Link className="card account-build-card" href="/build"><span className="feature-icon">+</span><strong>Build a resume</strong><small>Share your career information</small></Link>
+    </div>
+    <div className="account-requests-heading"><h2>Your resume requests</h2><span>{requests.length} total</span></div>
+    {!requests.length ? <div className="card admin-empty"><h3>No resume requests yet</h3><p>Start by sharing your career experience.</p><Link className="button button-primary" href="/build">Build Resume</Link></div> :
+      <div className="admin-request-list">{requests.map((item) => <article className="card account-request" key={item.id}>
+        <div><span className={`request-status status-${item.status}`}>{item.status.replace("-", " ")}</span><h3>{item.targetRole}</h3><p>Submitted {new Date(item.createdAt).toLocaleDateString()}</p></div>
+        <span className="account-request-name">{item.name}</span>
+      </article>)}</div>}
+  </section>;
+}

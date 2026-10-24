@@ -1,5 +1,5 @@
 const CACHE_PREFIX = "resumecraft-pwa-";
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v4`;
 const OFFLINE_URL = "/offline.html";
 const PRECACHE_URLS = [
   OFFLINE_URL,
@@ -37,6 +37,10 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {
+    if (["/admin", "/create", "/build", "/account", "/login", "/register"].includes(url.pathname)) {
+      event.respondWith(fetch(request));
+      return;
+    }
     event.respondWith(
       fetch(request)
         .then((response) => {

@@ -5,7 +5,10 @@ import { Navbar } from "@/components/layout/navbar";
 import { PwaInstallPrompt } from "@/components/layout/pwa-install-prompt";
 import { PwaRegistration } from "@/components/layout/pwa-registration";
 import { RouteTransition } from "@/components/layout/route-transition";
+import { ScrollToTop } from "@/components/layout/scroll-to-top";
 import { SupportButton } from "@/components/layout/support-button";
+import { ToastProvider } from "@/components/ui/toast-provider";
+import "sweetalert2/dist/sweetalert2.min.css";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -25,11 +28,11 @@ export const metadata: Metadata = {
     template: "%s | ResumeCraft AI",
   },
   description:
-    "Create a polished, ATS-friendly resume with professional templates and thoughtful writing guidance.",
+    "Share your career details and submit a request for your next resume.",
   openGraph: {
     title: "ResumeCraft AI — Build a Resume That Gets You Hired",
     description:
-      "A simpler way to shape your experience into a professional resume.",
+      "Submit your career information for your next resume request.",
     type: "website",
     siteName: "ResumeCraft AI",
   },
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#5c4bd8",
+  themeColor: "#17191f",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -52,13 +55,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${manrope.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <PwaRegistration />
-        <RouteTransition />
-        <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <SupportButton />
-        <PwaInstallPrompt />
+        <ToastProvider>
+          <PwaRegistration />
+          <RouteTransition />
+          <Navbar />
+          <main className="flex-1">{children}</main>
+          <Footer />
+          <SupportButton />
+          <ScrollToTop />
+          <PwaInstallPrompt />
+        </ToastProvider>
       </body>
     </html>
   );
