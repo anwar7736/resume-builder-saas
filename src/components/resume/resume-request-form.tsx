@@ -2,6 +2,7 @@
 
 import { FileText, Upload, X } from "lucide-react";
 import { useRef, useState, type DragEvent, type FormEvent } from "react";
+import { FieldError, useFieldValidation } from "@/components/ui/field-validation";
 import { useToast } from "@/components/ui/toast-provider";
 import { confirmWithSweetAlert } from "@/lib/confirmation-alert";
 
@@ -9,7 +10,7 @@ const fields = [
   { name: "name", label: "Full name", required: true, maxLength: 100 },
   { name: "email", label: "Email address", type: "email", required: true, maxLength: 254 },
   { name: "phone", label: "Phone number", maxLength: 40 },
-  { name: "targetRole", label: "Target role", required: true, maxLength: 120 },
+  { name: "targetRole", label: "Target role", required: true, maxLength: 120, pattern: ".*\\S.*" },
   { name: "education", label: "Education", maxLength: 3000, multiline: true },
   { name: "skills", label: "Skills", maxLength: 2000, multiline: true },
   { name: "experience", label: "Work experience", required: true, maxLength: 5000, multiline: true, hint: "Include job titles, organizations, dates, and what you worked on." },
@@ -29,20 +30,23 @@ function isAcceptedFile(file: File) {
 export function ResumeRequestForm({ name = "", email = "" }: { name?: string; email?: string }) {
   const [busy, setBusy] = useState(false);
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentError, setAttachmentError] = useState("");
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const toast = useToast();
+  const { errors, handleInvalid, handleInput, setFieldError, clearErrors } = useFieldValidation();
 
   function selectFile(file: File | undefined) {
     if (!file) return;
     if (!isAcceptedFile(file)) {
-      toast.error("Choose a PDF, DOC, DOCX, or TXT file.");
+      setAttachmentError("Choose a PDF, DOC, DOCX, or TXT file.");
       return;
     }
     if (file.size > maximumFileSize) {
-      toast.error("The file must be 10 MB or smaller.");
+      setAttachmentError("The file must be 10 MB or smaller.");
       return;
     }
+    setAttachmentError("");
     setAttachment(file);
   }
 
@@ -50,7 +54,7 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
     event.preventDefault();
     setDragging(false);
     if (event.dataTransfer.files.length > 1) {
-      toast.error("You can attach one file at a time.");
+      setAttachmentError("You can attach one file at a time.");
       return;
     }
     selectFile(event.dataTransfer.files[0]);
@@ -74,9 +78,14 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
+    const experience = formData.get("experience");
+    if (typeof experience === "string" && !experience.trim()) {
+      setFieldError("experience", "Enter your work experience.");
+      return;
+    }
+    setBusy(true);
     if (attachment) formData.append("attachment", attachment, attachment.name);
     try {
       const response = await fetch("/api/resume-requests", {
@@ -89,11 +98,17 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
         const message = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
           ? result.error
           : "We couldn't submit your information. Please try again.";
+        if (message.startsWith("Attach one")) {
+          setAttachmentError(message);
+          return;
+        }
         toast.error(limitReached ? `${message} View plans or contact support for help.` : message);
         return;
       }
       form.reset();
+      clearErrors();
       setAttachment(null);
+      setAttachmentError("");
       if (fileInputRef.current) fileInputRef.current.value = "";
       toast.success("Thanks! Your information has been submitted successfully. Our team will take it from here.");
     } catch {
@@ -104,14 +119,15 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
   }
 
   return (
-    <form className="card form-card resume-request-form" onSubmit={handleSubmit}>
+    <form className="card form-card resume-request-form" onSubmit={handleSubmit} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
       <div className="form-grid">
         {fields.map((field) => (
           <div className={`form-group${"multiline" in field && field.multiline ? " full" : ""}`} key={field.name}>
             <label htmlFor={`resume-${field.name}`}>{field.label}{"required" in field && field.required && <span aria-hidden="true"> *</span>}</label>
             {"multiline" in field && field.multiline
-              ? <textarea className="form-field" id={`resume-${field.name}`} name={field.name} required={"required" in field && field.required} maxLength={field.maxLength} rows={field.name === "experience" ? 6 : 4} />
-              : <input className="form-field" id={`resume-${field.name}`} name={field.name} type={"type" in field ? field.type : "text"} required={"required" in field && field.required} maxLength={field.maxLength} defaultValue={field.name === "name" ? name : field.name === "email" ? email : undefined} readOnly={field.name === "name" || field.name === "email"} />}
+              ? <textarea className="form-field" id={`resume-${field.name}`} name={field.name} required={"required" in field && field.required} maxLength={field.maxLength} rows={field.name === "experience" ? 6 : 4} aria-invalid={Boolean(errors[field.name])} aria-describedby={errors[field.name] ? `resume-${field.name}-error` : undefined} />
+              : <input className="form-field" id={`resume-${field.name}`} name={field.name} type={"type" in field ? field.type : "text"} required={"required" in field && field.required} maxLength={field.maxLength} pattern={"pattern" in field ? field.pattern : undefined} title={field.name === "targetRole" ? "Enter a target role." : undefined} defaultValue={field.name === "name" ? name : field.name === "email" ? email : undefined} readOnly={field.name === "name" || field.name === "email"} aria-invalid={Boolean(errors[field.name])} aria-describedby={errors[field.name] ? `resume-${field.name}-error` : undefined} />}
+            <FieldError id={`resume-${field.name}-error`} error={errors[field.name]} />
             {"hint" in field && <small className="field-hint">{field.hint}</small>}
           </div>
         ))}
@@ -137,6 +153,8 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
               id="resume-attachment"
               type="file"
               accept=".pdf,.doc,.docx,.txt"
+              aria-invalid={Boolean(attachmentError)}
+              aria-describedby={attachmentError ? "resume-attachment-error" : undefined}
               onChange={(event) => selectFile(event.currentTarget.files?.[0])}
             />
           </div>
@@ -154,9 +172,11 @@ export function ResumeRequestForm({ name = "", email = "" }: { name?: string; em
               </button>
             </div>
           )}
+          <FieldError id="resume-attachment-error" error={attachmentError} />
         </div>
         <div className="form-group full">
-          <label className="consent-label"><input type="checkbox" required /> I agree that my information and any attached file can be used to prepare my resume request.</label>
+          <label className="consent-label"><input type="checkbox" name="consent" required aria-invalid={Boolean(errors.consent)} aria-describedby={errors.consent ? "resume-consent-error" : undefined} /> I agree that my information and any attached file can be used to prepare my resume request.</label>
+          <FieldError id="resume-consent-error" error={errors.consent} />
         </div>
         <div className="form-group full">
           <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Submitting..." : "Submit my information"}</button>

@@ -1,20 +1,28 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { FieldError, useFieldValidation } from "@/components/ui/field-validation";
 import { useToast } from "@/components/ui/toast-provider";
 
 export function ContactForm({ title, description, submitLabel, successMessage, defaultSubject = "" }: { title: string; description: string; submitLabel: string; successMessage: string; defaultSubject?: string }) {
   const [busy, setBusy] = useState(false);
+  const { errors, handleInvalid, handleInput, setFieldError, clearErrors } = useFieldValidation();
   const toast = useToast();
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setBusy(true);
     const form = event.currentTarget;
+    const values = new FormData(form);
+    const message = values.get("message");
+    if (typeof message === "string" && message.trim().length < 10) {
+      setFieldError("message", "Enter a message with at least 10 characters.");
+      return;
+    }
+    setBusy(true);
     try {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(Object.fromEntries(new FormData(form).entries())),
+        body: JSON.stringify(Object.fromEntries(values.entries())),
       });
       const result: unknown = await response.json();
       if (!response.ok) {
@@ -25,6 +33,7 @@ export function ContactForm({ title, description, submitLabel, successMessage, d
         return;
       }
       form.reset();
+      clearErrors();
       if (typeof result === "object" && result !== null && "emailSent" in result && result.emailSent === false &&
           "message" in result && typeof result.message === "string") {
         toast.info(result.message);
@@ -37,13 +46,13 @@ export function ContactForm({ title, description, submitLabel, successMessage, d
       setBusy(false);
     }
   }
-  return <form className="card form-card" onSubmit={handleSubmit}>
+  return <form className="card form-card" onSubmit={handleSubmit} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
     <h2 style={{ margin: "0 0 8px", fontSize: 19 }}>{title}</h2><p className="contact-form-description">{description}</p>
     <div className="form-grid">
-      <div className="form-group"><label htmlFor="name">Name</label><input className="form-field" id="name" name="name" autoComplete="name" required maxLength={100} /></div>
-      <div className="form-group"><label htmlFor="email">Email</label><input className="form-field" id="email" name="email" type="email" autoComplete="email" required maxLength={254} /></div>
-      <div className="form-group full"><label htmlFor="subject">Subject</label><input className="form-field" id="subject" name="subject" defaultValue={defaultSubject} required maxLength={150} /></div>
-      <div className="form-group full"><label htmlFor="message">Message</label><textarea className="form-field" id="message" name="message" required minLength={10} maxLength={3000} /></div>
+      <div className="form-group"><label htmlFor="name">Name</label><input className="form-field" id="name" name="name" autoComplete="name" required minLength={2} maxLength={100} pattern=".*\\S.*" title="Enter a name with at least two non-space characters." aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? "contact-name-error" : undefined} /><FieldError id="contact-name-error" error={errors.name} /></div>
+      <div className="form-group"><label htmlFor="email">Email</label><input className="form-field" id="email" name="email" type="email" autoComplete="email" required maxLength={254} aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? "contact-email-error" : undefined} /><FieldError id="contact-email-error" error={errors.email} /></div>
+      <div className="form-group full"><label htmlFor="subject">Subject</label><input className="form-field" id="subject" name="subject" defaultValue={defaultSubject} required minLength={2} maxLength={150} pattern=".*\\S.*" title="Enter a subject with at least two non-space characters." aria-invalid={Boolean(errors.subject)} aria-describedby={errors.subject ? "contact-subject-error" : undefined} /><FieldError id="contact-subject-error" error={errors.subject} /></div>
+      <div className="form-group full"><label htmlFor="message">Message</label><textarea className="form-field" id="message" name="message" required minLength={10} maxLength={3000} aria-invalid={Boolean(errors.message)} aria-describedby={errors.message ? "contact-message-error" : undefined} /><FieldError id="contact-message-error" error={errors.message} /></div>
       <div className="form-group full"><button className="button button-primary" type="submit" disabled={busy}>{busy ? "Sending..." : submitLabel}</button></div>
     </div>
   </form>;

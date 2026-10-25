@@ -211,6 +211,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .form-group.full { grid-column: 1 / -1; }
 .form-group label { font-size: 12px; font-weight: 600; }
 .form-field { width: 100%; min-height: 44px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 9px; background: white; outline: none; }
+.form-field[aria-invalid="true"] { border-color: #e47d86; }
+.field-error { color: #e78b92; font-size: 11px; line-height: 1.5; }
 textarea.form-field { min-height: 135px; resize: vertical; }
 .form-feedback { padding: 12px 14px; border-radius: 9px; background: #f3f1fc; color: #5145ae; font-size: 12px; line-height: 1.6; }
 .resume-form-section { max-width: 820px; padding-bottom: 100px; }
@@ -239,7 +241,7 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .admin-settings h3, .admin-empty h3 { margin: 0 0 6px; font-size: 15px; }
 .admin-settings p, .admin-empty p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
 .admin-webhook-form { display: flex; gap: 10px; }
-.admin-webhook-form .form-field { min-width: 0; }
+.admin-webhook-field { min-width: 0; flex: 1; }
 .admin-request-list { display: grid; gap: 14px; }
 .admin-request { padding: 22px; }
 .admin-request-header h3 { margin: 0 0 5px; font-size: 16px; }

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Plus, Save, Trash2, Upload } from "lucide-react";
 import { useState, type FormEvent, type ReactNode } from "react";
 import type { SiteContent } from "@/lib/site-content";
+import { FieldError, useFieldValidation } from "@/components/ui/field-validation";
 import { useToast } from "@/components/ui/toast-provider";
 import { confirmWithSweetAlert } from "@/lib/confirmation-alert";
 
@@ -49,6 +50,14 @@ function isLongText(value: string, key: string) {
   return value.includes("\n") || value.length > 100 || ["description", "story", "quote", "text", "answer", "inquiriesText", "responseText", "locationText", "plansDisclaimer", "heroNote"].includes(key);
 }
 
+function contentFieldName(path: ContentPath) {
+  return `content.${path.join(".")}`;
+}
+
+function contentFieldErrorId(path: ContentPath) {
+  return `content-error-${path.join("-")}`;
+}
+
 export function SiteContentEditor({
   initialContent,
   onSave,
@@ -60,6 +69,7 @@ export function SiteContentEditor({
   const [saving, setSaving] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState(initialContent.contact.supportAvatar || "/support-avatar.jpg");
   const toast = useToast();
+  const { errors, handleInvalid, handleInput } = useFieldValidation();
 
   const update = (path: ContentPath, value: unknown) => {
     setDraft((current) => setAtPath(current, path, value) as SiteContent);
@@ -157,7 +167,8 @@ export function SiteContentEditor({
           <div>
             <span className="content-field-label">Support avatar</span>
             <p className="field-hint">Upload a JPG, PNG, or WebP image up to 1 MB, or enter an image URL.</p>
-            <input className="form-field" aria-label="Support avatar image URL" value={avatarValue.startsWith("data:") ? "" : avatarValue} onChange={(event) => update(path, event.target.value)} placeholder={avatarValue.startsWith("data:") ? "Uploaded image selected" : "/support-avatar.jpg or https://..."} />
+            <input className="form-field" name={contentFieldName(path)} aria-label="Support avatar image URL" value={avatarValue.startsWith("data:") ? "" : avatarValue} onChange={(event) => update(path, event.target.value)} placeholder={avatarValue.startsWith("data:") ? "Uploaded image selected" : "/support-avatar.jpg or https://..."} aria-invalid={Boolean(errors[contentFieldName(path)])} aria-describedby={errors[contentFieldName(path)] ? contentFieldErrorId(path) : undefined} />
+            <FieldError id={contentFieldErrorId(path)} error={errors[contentFieldName(path)]} />
             <label className="button button-secondary button-small content-upload-button">
               <Upload size={14} /> Upload avatar
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => { uploadAvatar(event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} />
@@ -172,7 +183,7 @@ export function SiteContentEditor({
       return (
         <label className="content-field" key={path.join(".")}>
           <span className="content-field-label">Plan ID (fixed)</span>
-          <input className="form-field" value={typeof value === "string" ? value : ""} readOnly />
+          <input className="form-field" name={contentFieldName(path)} value={typeof value === "string" ? value : ""} readOnly />
         </label>
       );
     }
@@ -191,7 +202,8 @@ export function SiteContentEditor({
       return (
         <label className="content-field" key={path.join(".")}>
           <span className="content-field-label">{labelFor(key)}</span>
-          <input className="form-field" type="number" min={0} step={1} value={typeof value === "number" ? value : ""} placeholder={isNumericLimit ? "Unlimited" : ""} onChange={(event) => update(path, event.target.value === "" ? (isNumericLimit ? null : 0) : Number(event.target.value))} />
+          <input className="form-field" name={contentFieldName(path)} type="number" min={0} step={1} value={typeof value === "number" ? value : ""} placeholder={isNumericLimit ? "Unlimited" : ""} onChange={(event) => update(path, event.target.value === "" ? (isNumericLimit ? null : 0) : Number(event.target.value))} aria-invalid={Boolean(errors[contentFieldName(path)])} aria-describedby={errors[contentFieldName(path)] ? contentFieldErrorId(path) : undefined} />
+          <FieldError id={contentFieldErrorId(path)} error={errors[contentFieldName(path)]} />
           {isNumericLimit && <small className="field-hint">Leave empty for unlimited requests.</small>}
         </label>
       );
@@ -202,14 +214,15 @@ export function SiteContentEditor({
       <label className={`content-field${isLongText(text, key) ? " content-field-wide" : ""}`} key={path.join(".")}>
         <span className="content-field-label">{labelFor(key)}</span>
         {isLongText(text, key)
-          ? <textarea className="form-field" rows={text.length > 220 ? 5 : 3} value={text} onChange={(event) => update(path, event.target.value)} />
-          : <input className="form-field" value={text} onChange={(event) => update(path, event.target.value)} />}
+          ? <textarea className="form-field" name={contentFieldName(path)} rows={text.length > 220 ? 5 : 3} value={text} onChange={(event) => update(path, event.target.value)} aria-invalid={Boolean(errors[contentFieldName(path)])} aria-describedby={errors[contentFieldName(path)] ? contentFieldErrorId(path) : undefined} />
+          : <input className="form-field" name={contentFieldName(path)} value={text} onChange={(event) => update(path, event.target.value)} aria-invalid={Boolean(errors[contentFieldName(path)])} aria-describedby={errors[contentFieldName(path)] ? contentFieldErrorId(path) : undefined} />}
+        <FieldError id={contentFieldErrorId(path)} error={errors[contentFieldName(path)]} />
       </label>
     );
   };
 
   return (
-    <form className="site-content-editor" onSubmit={save}>
+    <form className="site-content-editor" onSubmit={save} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
       <div className="site-content-editor-heading">
         <div><h3>Manage site content</h3><p>Update each section using simple fields. Changes go live after saving.</p></div>
         <button className="button button-primary" type="submit" disabled={saving}>

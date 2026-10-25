@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { FieldError, useFieldValidation } from "@/components/ui/field-validation";
 import type { ContactMessage, ResumeRequest, ResumeRequestStatus, UserAccount, AccountPlan } from "@/lib/resume-store";
 import { isSiteContent, type SiteContent } from "@/lib/site-content";
 import { confirmWithSweetAlert } from "@/lib/confirmation-alert";
@@ -93,6 +94,7 @@ export function AdminPanel({
   const [webhookUrl, setWebhookUrl] = useState(initialWebhookUrl);
   const [tab, setTab] = useState<"requests" | "messages" | "users" | "content" | "settings">("requests");
   const [busy, setBusy] = useState(false);
+  const { errors, handleInvalid, handleInput, setFieldError } = useFieldValidation();
   const toast = useToast();
 
   async function login(event: FormEvent<HTMLFormElement>) {
@@ -127,7 +129,9 @@ export function AdminPanel({
       setPassword("");
       toast.success("Signed in to the admin panel.");
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Unable to sign in.");
+      const message = reason instanceof Error ? reason.message : "Unable to sign in.";
+      if (message === "The email or password is incorrect.") setFieldError("adminPassword", message);
+      else toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -206,7 +210,9 @@ export function AdminPanel({
       await requestJson("/api/admin/settings", { method: "PATCH", body: JSON.stringify({ webhookUrl }) });
       toast.success("Webhook URL saved.");
     } catch (reason) {
-      toast.error(reason instanceof Error ? reason.message : "Unable to save settings.");
+      const message = reason instanceof Error ? reason.message : "Unable to save settings.";
+      if (message.includes("webhook URL") || message.includes("Webhook URL")) setFieldError("webhookUrl", message);
+      else toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -245,11 +251,13 @@ export function AdminPanel({
   if (!authenticated) {
     return <section className="card admin-login">
       <span className="eyebrow">Private workspace</span><h2>Admin sign in</h2><p>Sign in to review requests, users, and site content.</p>
-      <form className="admin-login-form" onSubmit={login}>
+      <form className="admin-login-form" onSubmit={login} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
         <label htmlFor="admin-email">Admin email</label>
-        <input className="form-field" id="admin-email" type="email" autoComplete="username" value={adminEmail} onChange={(event) => setAdminEmail(event.target.value)} required maxLength={254} />
+        <input className="form-field" id="admin-email" name="adminEmail" type="email" autoComplete="username" value={adminEmail} onChange={(event) => setAdminEmail(event.target.value)} required maxLength={254} aria-invalid={Boolean(errors.adminEmail)} aria-describedby={errors.adminEmail ? "admin-email-error" : undefined} />
+        <FieldError id="admin-email-error" error={errors.adminEmail} />
         <label htmlFor="admin-password">Admin password</label>
-        <input className="form-field" id="admin-password" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+        <input className="form-field" id="admin-password" name="adminPassword" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required aria-invalid={Boolean(errors.adminPassword)} aria-describedby={errors.adminPassword ? "admin-password-error" : undefined} />
+        <FieldError id="admin-password-error" error={errors.adminPassword} />
         <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
       </form>
     </section>;
@@ -296,9 +304,12 @@ export function AdminPanel({
     {tab === "content" && <SiteContentEditor initialContent={content} onSave={saveContent} />}
     {tab === "settings" && <section className="card admin-settings">
       <div><h3>n8n webhook URL</h3><p>Saved in settings only. The website does not send information to this URL.</p></div>
-      <form className="admin-webhook-form" onSubmit={saveSettings}>
+      <form className="admin-webhook-form" onSubmit={saveSettings} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
         <label className="sr-only" htmlFor="admin-webhook">Webhook URL</label>
-        <input className="form-field" id="admin-webhook" type="url" placeholder="https://example.com/webhook/..." value={webhookUrl} maxLength={2048} onChange={(event) => setWebhookUrl(event.target.value)} />
+        <div className="form-group admin-webhook-field">
+          <input className="form-field" id="admin-webhook" name="webhookUrl" type="url" placeholder="https://example.com/webhook/..." value={webhookUrl} maxLength={2048} onChange={(event) => setWebhookUrl(event.target.value)} aria-invalid={Boolean(errors.webhookUrl)} aria-describedby={errors.webhookUrl ? "admin-webhook-error" : undefined} />
+          <FieldError id="admin-webhook-error" error={errors.webhookUrl} />
+        </div>
         <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Saving..." : "Save URL"}</button>
       </form>
     </section>}

@@ -2,17 +2,34 @@
 
 import Link from "next/link";
 import { FileText, Menu, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { authStateChangedEvent } from "@/components/auth/auth-state";
 import { ButtonLink } from "@/components/ui/button-link";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
   const [labels, setLabels] = useState({ about: "About", plans: "Plans", account: "Sign in", build: "Build Resume" });
+  const refreshAuthState = useCallback(async () => {
+    const response = await fetch("/api/auth/me", { cache: "no-store" });
+    if (!response.ok) throw new Error("Unable to check account session.");
+    const data: unknown = await response.json();
+    return typeof data === "object" && data !== null && "user" in data && Boolean(data.user);
+  }, []);
   useEffect(() => {
-    fetch("/api/auth/me").then((response) => response.json()).then((data: unknown) => {
-      setSignedIn(typeof data === "object" && data !== null && "user" in data && Boolean(data.user));
-    }).catch((error: unknown) => console.error("Unable to check account session.", error));
+    let active = true;
+    let latestRequest = 0;
+    const checkAuth = () => {
+      const requestId = ++latestRequest;
+      refreshAuthState().then((isSignedIn) => {
+        if (active && requestId === latestRequest) setSignedIn(isSignedIn);
+      }).catch((error: unknown) => {
+        if (active && requestId === latestRequest) console.error("Unable to check account session.", error);
+      });
+    };
+    const handleAuthStateChanged = () => checkAuth();
+    checkAuth();
+    window.addEventListener(authStateChangedEvent, handleAuthStateChanged);
     fetch("/api/site-content").then((response) => response.json()).then((data: unknown) => {
       if (typeof data === "object" && data !== null && "navigation" in data && typeof data.navigation === "object" && data.navigation !== null) {
         const navigation = data.navigation;
@@ -27,7 +44,11 @@ export function Navbar() {
         }
       }
     }).catch((error: unknown) => console.error("Unable to load navigation labels.", error));
-  }, []);
+    return () => {
+      active = false;
+      window.removeEventListener(authStateChangedEvent, handleAuthStateChanged);
+    };
+  }, [refreshAuthState]);
   const links = [
     { href: "/pricing", label: labels.plans },
     { href: "/about", label: labels.about },

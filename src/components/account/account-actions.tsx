@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { notifyAuthStateChanged } from "@/components/auth/auth-state";
 import { useToast } from "@/components/ui/toast-provider";
 
 export function AccountActions() {
@@ -13,6 +14,7 @@ export function AccountActions() {
     try {
       const response = await fetch("/api/auth/session", { method: "DELETE" });
       if (!response.ok) throw new Error("Unable to sign out. Please try again.");
+      notifyAuthStateChanged();
       toast.success("You have been signed out.");
       router.push("/");
       router.refresh();
