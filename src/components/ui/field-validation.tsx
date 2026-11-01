@@ -10,7 +10,7 @@ function isValidatableField(value: EventTarget): value is ValidatableField {
 }
 
 function fieldKey(field: ValidatableField) {
-  return field.name || field.id;
+  return field.dataset.validationKey || field.name || field.id;
 }
 
 export function useFieldValidation() {

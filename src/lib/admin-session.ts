@@ -16,8 +16,13 @@ export function adminIsConfigured() {
 
 export function verifyAdminCredentials(email: string, password: string) {
   const configuredEmail = process.env.ADMIN_EMAIL;
+  if (!configuredEmail || email.trim().toLowerCase() !== configuredEmail.trim().toLowerCase()) return false;
+  return verifyAdminPassword(password);
+}
+
+export function verifyAdminPassword(password: string) {
   const configuredPassword = process.env.ADMIN_PASSWORD;
-  if (!configuredEmail || !configuredPassword || email.trim().toLowerCase() !== configuredEmail.trim().toLowerCase()) return false;
+  if (!configuredPassword) return false;
   const suppliedHash = createHmac("sha256", "resume-admin-password").update(password).digest();
   const configuredHash = createHmac("sha256", "resume-admin-password").update(configuredPassword).digest();
   return timingSafeEqual(suppliedHash, configuredHash);

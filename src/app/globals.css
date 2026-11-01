@@ -242,6 +242,19 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .admin-settings p, .admin-empty p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
 .admin-webhook-form { display: flex; gap: 10px; }
 .admin-webhook-field { min-width: 0; flex: 1; }
+.admin-edit-details { margin-top: 16px; }
+.admin-edit-details > summary { width: fit-content; color: var(--purple); font-size: 12px; font-weight: 650; cursor: pointer; }
+.admin-edit-details form { margin-top: 14px; }
+.admin-user-actions { display: flex; align-items: center; gap: 8px; }
+.two-factor-settings { display: grid; gap: 16px; padding: 22px; margin-bottom: 32px; }
+.two-factor-settings h3 { margin: 0 0 6px; font-size: 15px; }
+.two-factor-settings p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+.two-factor-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: end; gap: 12px; }
+.two-factor-setup { display: grid; justify-items: start; gap: 14px; }
+.two-factor-setup > img { border: 1px solid var(--line); border-radius: 12px; background: white; }
+.two-factor-secret { display: grid; gap: 5px; }
+.two-factor-secret code { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; background: #f5f4f2; font-size: 13px; letter-spacing: .08em; overflow-wrap: anywhere; }
+.two-factor-setup .two-factor-form { width: min(100%, 500px); }
 .admin-request-list { display: grid; gap: 14px; }
 .admin-request { padding: 22px; }
 .admin-request-header h3 { margin: 0 0 5px; font-size: 16px; }
@@ -343,7 +356,7 @@ textarea.form-field { min-height: 135px; resize: vertical; }
   .form-grid { grid-template-columns: 1fr; }
   .form-group.full { grid-column: auto; }
   .admin-toolbar, .admin-request-header { align-items: flex-start; flex-direction: column; }
-  .admin-webhook-form, .admin-request-actions { width: 100%; flex-wrap: wrap; }
+  .admin-webhook-form, .admin-request-actions, .admin-user-actions { width: 100%; flex-wrap: wrap; }
   .admin-webhook-form .form-field { flex: 1 1 180px; }
   .admin-request-actions { justify-content: flex-start; }
   .login-page { min-height: auto; padding: 28px 16px 55px; }
@@ -439,6 +452,9 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .account-request { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 20px 23px; }
 .account-request h3 { margin: 9px 0 4px; font-size: 15px; }
 .account-request p, .account-request-name { margin: 0; color: var(--muted); font-size: 11px; }
+.account-resume-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.account-resume-list { margin-bottom: 36px; }
+.account-empty { margin-bottom: 36px; }
 .request-status { display: inline-flex; padding: 5px 9px; border-radius: 20px; background: #f0eefe; color: #5144bd; font-size: 10px; font-weight: 700; text-transform: capitalize; }
 .status-completed { background: #eaf7ee; color: #287642; }
 .status-in-progress { background: #fff5dd; color: #8c6212; }

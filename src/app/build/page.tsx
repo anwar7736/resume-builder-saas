@@ -2,20 +2,29 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { ResumeRequestForm } from "@/components/resume/resume-request-form";
-import { getSiteContent } from "@/lib/resume-store";
+import { getResumeRequestById, getSiteContent } from "@/lib/resume-store";
 import { getCurrentUser } from "@/lib/user-auth";
 
 export const metadata: Metadata = { title: "Build Resume" };
 
-export default function BuildPage() {
+export default async function BuildPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ requestId?: string | string[] }>;
+}) {
+  const params = await searchParams;
+  const requestId = typeof params.requestId === "string" ? params.requestId : undefined;
   return <Suspense fallback={<main className="content-loading" aria-label="Loading resume builder" />}>
-    <BuildPageContent />
+    <BuildPageContent requestId={requestId} />
   </Suspense>;
 }
 
-async function BuildPageContent() {
+async function BuildPageContent({ requestId }: { requestId?: string }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/build");
+  const foundRequest = requestId ? await getResumeRequestById(requestId, user.id) : null;
+  if (requestId && !foundRequest) redirect("/account");
+  const initialRequest = foundRequest ?? undefined;
   const content = await getSiteContent();
   const plan = content.plans.find((item) => item.id === user.plan);
   const limit = plan?.resumeLimit ?? null;
@@ -27,7 +36,7 @@ async function BuildPageContent() {
     </div></section>;
   }
   return <>
-    <header className="page-hero container"><span className="eyebrow">{plan?.name ?? user.plan} plan · {limit === null ? "Unlimited requests" : `${Math.max(0, limit - user.resumeCount)} request${limit - user.resumeCount === 1 ? "" : "s"} remaining`}</span><h1 className="heading">Build your resume.</h1><p className="subheading">Share your experience and the role you’re aiming for. You can track your request from your account.</p></header>
-    <section className="container resume-form-section"><ResumeRequestForm name={user.name} email={user.email} /></section>
+    <header className="page-hero container"><span className="eyebrow">{plan?.name ?? user.plan} plan · {limit === null ? "Unlimited requests" : `${Math.max(0, limit - user.resumeCount)} request${limit - user.resumeCount === 1 ? "" : "s"} remaining`}</span><h1 className="heading">{initialRequest ? "Create a new resume from this one." : "Build your resume."}</h1><p className="subheading">Share your experience and the role you’re aiming for. You can track your request from your account.</p></header>
+    <section className="container resume-form-section"><ResumeRequestForm name={user.name} email={user.email} initialRequest={initialRequest} /></section>
   </>;
 }

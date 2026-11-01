@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createUserSession, userCookieName } from "@/lib/admin-session";
-import { findUserByEmail } from "@/lib/resume-store";
+import {
+  consumeTwoFactorAttempt,
+  consumeUserTwoFactorCounter,
+  findUserByEmail,
+  getUserTwoFactorState,
+} from "@/lib/resume-store";
 import { normalizeEmail, verifyPassword } from "@/lib/user-auth";
+import { verifyTotpCode } from "@/lib/two-factor.server";
 
 export async function POST(request: NextRequest) {
   let payload: unknown;
@@ -14,13 +20,30 @@ export async function POST(request: NextRequest) {
       !("password" in payload) || typeof payload.email !== "string" || typeof payload.password !== "string") {
     return NextResponse.json({ error: "Enter your email and password." }, { status: 400 });
   }
-  if (payload.email.length > 254 || payload.password.length > 128) {
+  const totpCode = "totpCode" in payload && typeof payload.totpCode === "string" ? payload.totpCode : "";
+  if (payload.email.length > 254 || payload.password.length > 128 || totpCode.length > 6) {
     return NextResponse.json({ error: "Invalid email or password." }, { status: 400 });
   }
   try {
     const user = await findUserByEmail(normalizeEmail(payload.email));
     if (!user || !await verifyPassword(payload.password, user.passwordSalt, user.passwordHash)) {
       return NextResponse.json({ error: "Email or password is incorrect." }, { status: 401 });
+    }
+    const twoFactor = await getUserTwoFactorState(user._id.toHexString());
+    if (!twoFactor) return NextResponse.json({ error: "Account not found." }, { status: 401 });
+    if (twoFactor.enabled) {
+      if (!totpCode) return NextResponse.json({ requiresTwoFactor: true });
+      if (!await consumeTwoFactorAttempt(`user:${user._id.toHexString()}`)) {
+        return NextResponse.json({ error: "Too many authenticator attempts. Try again in 15 minutes." }, { status: 429 });
+      }
+      const counter = twoFactor.secret ? verifyTotpCode(twoFactor.secret, totpCode) : null;
+      if (counter === null || (twoFactor.lastCounter !== undefined && counter <= twoFactor.lastCounter) ||
+          !await consumeUserTwoFactorCounter(user._id.toHexString(), counter)) {
+        return NextResponse.json({
+          error: "Enter a valid, unused authenticator code.",
+          code: "invalid_two_factor",
+        }, { status: 401 });
+      }
     }
     const response = NextResponse.json({ success: true });
     response.cookies.set(userCookieName, createUserSession(user._id.toHexString()), {
