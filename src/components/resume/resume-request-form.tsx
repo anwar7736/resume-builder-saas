@@ -114,10 +114,20 @@ export function ResumeRequestForm({
       form.reset();
       clearErrors();
       toast.success("Your resume information has been sent to our resume workflow.");
-    } catch(error) {
-      toast.error(error.message);
-      toast.error("We couldn't reach the server. Please check your connection and try again.");
-    } finally {
+    } catch (error) {
+  console.error("Resume Request Error:", error);
+
+  if (error instanceof Error) {
+    toast.error(error.message);
+  } else {
+    toast.error("An unexpected error occurred.");
+  }
+
+  // Keep the previous static error message
+  toast.error(
+    "We couldn't reach the server. Please check your connection and try again."
+  );
+} finally {
       setBusy(false);
     }
   }
