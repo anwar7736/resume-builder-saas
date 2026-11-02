@@ -114,7 +114,8 @@ export function ResumeRequestForm({
       form.reset();
       clearErrors();
       toast.success("Your resume information has been sent to our resume workflow.");
-    } catch {
+    } catch(error) {
+      toast.error(error.message);
       toast.error("We couldn't reach the server. Please check your connection and try again.");
     } finally {
       setBusy(false);
