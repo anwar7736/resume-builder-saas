@@ -7,6 +7,7 @@ import {
   getWebhookConfiguration,
 } from "@/lib/resume-store";
 import { getUserIdFromSession, userCookieName } from "@/lib/admin-session";
+import { extractProfileSummaryText } from "@/lib/profile-summary";
 
 const limits = {
   fullName: 100,
@@ -126,6 +127,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Attach a non-empty PDF, DOC, DOCX, or TXT file up to 10 MB." }, { status: 400 });
   }
 
+  let profileSummaryText: string | undefined;
+  if (summaryValue instanceof File && summaryValue.size > 0) {
+    try {
+      profileSummaryText = await extractProfileSummaryText(summaryValue);
+    } catch (error) {
+      console.error("Unable to extract text from the uploaded profile summary.", {
+        fileType: summaryValue.name.slice(summaryValue.name.lastIndexOf(".")).toLowerCase(),
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      });
+      return NextResponse.json({
+        error: "We couldn't extract text from that file. Use a valid text-based PDF, DOC, DOCX, or UTF-8 TXT file.",
+        code: "profile_summary_extraction_failed",
+      }, { status: 400 });
+    }
+  }
+
   try {
     const user = await findUserById(userId);
     if (!user) return NextResponse.json({ error: "Your session expired. Please sign in again." }, { status: 401 });
@@ -169,7 +186,10 @@ export async function POST(request: NextRequest) {
     webhookForm.set("requestId", result.request.id);
     webhookForm.set("userId", userId);
     if (photoValue instanceof File && photoValue.size > 0) webhookForm.append("profilePhoto", photoValue, safeFilename(photoValue.name));
-    if (summaryValue instanceof File && summaryValue.size > 0) webhookForm.append("profileSummary", summaryValue, safeFilename(summaryValue.name));
+    if (summaryValue instanceof File && summaryValue.size > 0) {
+      webhookForm.append("profileSummary", summaryValue, safeFilename(summaryValue.name));
+      webhookForm.set("profileSummaryText", profileSummaryText ?? "");
+    }
     try {
       const response = await fetch(webhookUrl, {
         method: "POST",

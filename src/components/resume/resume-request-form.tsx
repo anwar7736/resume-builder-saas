@@ -99,9 +99,15 @@ export function ResumeRequestForm({
       const result: unknown = await response.json();
       if (!response.ok) {
         const limitReached = typeof result === "object" && result !== null && "code" in result && result.code === "plan_limit_reached";
+        const profileSummaryExtractionFailed = typeof result === "object" && result !== null &&
+          "code" in result && result.code === "profile_summary_extraction_failed";
         const message = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
           ? result.error
           : "We couldn't submit your information. Please try again.";
+        if (profileSummaryExtractionFailed) {
+          setFieldError("profileSummary", message);
+          return;
+        }
         toast.error(limitReached ? `${message} View plans or contact support for help.` : message);
         return;
       }
