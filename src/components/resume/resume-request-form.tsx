@@ -96,7 +96,25 @@ export function ResumeRequestForm({
         method: "POST",
         body: formData,
       });
-      const result: unknown = await response.json();
+      //const result: unknown = await response.json();
+      const responseText = await response.text();
+
+console.log("API Status:", response.status);
+console.log("API Response:", responseText);
+
+let result: unknown;
+
+try {
+  result = responseText ? JSON.parse(responseText) : {};
+} catch {
+  throw new Error(
+    `Invalid API response. Status: ${response.status}. Response: ${responseText}`
+  );
+}
+
+if (!response.ok) {
+  // Keep your existing error handling here
+}
       if (!response.ok) {
         const limitReached = typeof result === "object" && result !== null && "code" in result && result.code === "plan_limit_reached";
         const profileSummaryExtractionFailed = typeof result === "object" && result !== null &&
@@ -117,20 +135,149 @@ export function ResumeRequestForm({
     } catch (error) {
   console.error("Resume Request Error:", error);
 
-  if (error instanceof Error) {
-    toast.error(error.message);
-  } else {
-    toast.error("An unexpected error occurred.");
+async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const formData = new FormData(form);
+
+  const profilePhoto = formData.get("profilePhoto");
+  const profileSummary = formData.get("profileSummary");
+
+  // Validate profile photo
+  if (profilePhoto instanceof File && profilePhoto.size > 0) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type)) {
+      setFieldError(
+        "profilePhoto",
+        "Choose a JPG, PNG, or WebP profile photo."
+      );
+      return;
+    }
+
+    if (profilePhoto.size > maximumImageSize) {
+      setFieldError(
+        "profilePhoto",
+        "The profile photo must be 5 MB or smaller."
+      );
+      return;
+    }
+
+    setFieldError("profilePhoto", "");
   }
 
-  // Keep the previous static error message
-  toast.error(
-    "We couldn't reach the server. Please check your connection and try again."
-  );
-} finally {
-      setBusy(false);
+  // Validate profile summary
+  if (profileSummary instanceof File && profileSummary.size > 0) {
+    const extension = profileSummary.name
+      .slice(profileSummary.name.lastIndexOf("."))
+      .toLowerCase();
+
+    if (![".pdf", ".doc", ".docx", ".txt"].includes(extension)) {
+      setFieldError(
+        "profileSummary",
+        "Choose a PDF, DOC, DOCX, or TXT profile summary file."
+      );
+      return;
+    }
+
+    if (profileSummary.size > maximumSummaryFileSize) {
+      setFieldError(
+        "profileSummary",
+        "The profile summary file must be 10 MB or smaller."
+      );
+      return;
     }
   }
+
+  setFieldError("profileSummary", "");
+  setBusy(true);
+
+  try {
+    const response = await fetch("/api/resume-requests", {
+      method: "POST",
+      body: formData,
+    });
+
+    // Read response as text first to prevent JSON parsing errors
+    const responseText = await response.text();
+
+    let result: unknown;
+
+    try {
+      result = responseText ? JSON.parse(responseText) : {};
+    } catch {
+      throw new Error(
+        `API Error (HTTP ${response.status}): ${
+          responseText || "Empty response from server."
+        }`
+      );
+    }
+
+    // Handle unsuccessful API responses
+    if (!response.ok) {
+      const isObject =
+        typeof result === "object" && result !== null;
+
+      const limitReached =
+        isObject &&
+        "code" in result &&
+        result.code === "plan_limit_reached";
+
+      const profileSummaryExtractionFailed =
+        isObject &&
+        "code" in result &&
+        result.code === "profile_summary_extraction_failed";
+
+      const message =
+        isObject &&
+        "error" in result &&
+        typeof result.error === "string"
+          ? result.error
+          : `Request failed with HTTP ${response.status}.`;
+
+      if (profileSummaryExtractionFailed) {
+        setFieldError("profileSummary", message);
+        toast.error(message);
+        return;
+      }
+
+      toast.error(
+        limitReached
+          ? `${message} View plans or contact support for help.`
+          : message
+      );
+
+      return;
+    }
+
+    // Success
+    form.reset();
+    clearErrors();
+
+    toast.success(
+      "Your resume information has been sent to our resume workflow."
+    );
+
+  } catch (error) {
+    // Show actual error on mobile screen
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : String(error);
+
+    console.error("Resume Request Error:", error);
+
+    // Actual error
+    toast.error(errorMessage);
+
+    // Keep previous static message
+    toast.error(
+      "We couldn't reach the server. Please check your connection and try again."
+    );
+
+  } finally {
+    setBusy(false);
+  }
+}
 
   return (
     <form className="card form-card resume-request-form" onSubmit={handleSubmit} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
