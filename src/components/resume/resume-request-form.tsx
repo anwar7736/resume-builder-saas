@@ -140,41 +140,42 @@ async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     }
 
     // Handle unsuccessful API responses
-    if (!response.ok) {
-      const isObject =
-        typeof result === "object" && result !== null;
+    
+if (!response.ok) {
+  const isObject = (
+    value: unknown
+  ): value is Record<string, unknown> => {
+    return typeof value === "object" && value !== null;
+  };
 
-      const limitReached =
-        isObject &&
-        "code" in result &&
-        result.code === "plan_limit_reached";
+  const data = isObject(result) ? result : {};
 
-      const profileSummaryExtractionFailed =
-        isObject &&
-        "code" in result &&
-        result.code === "profile_summary_extraction_failed";
+  const limitReached =
+    data.code === "plan_limit_reached";
 
-      const message =
-        isObject &&
-        "error" in result &&
-        typeof result.error === "string"
-          ? result.error
-          : `Request failed with HTTP ${response.status}.`;
+  const profileSummaryExtractionFailed =
+    data.code === "profile_summary_extraction_failed";
 
-      if (profileSummaryExtractionFailed) {
-        setFieldError("profileSummary", message);
-        toast.error(message);
-        return;
-      }
+  const message =
+    typeof data.error === "string"
+      ? data.error
+      : `Request failed with HTTP ${response.status}.`;
 
-      toast.error(
-        limitReached
-          ? `${message} View plans or contact support for help.`
-          : message
-      );
+  if (profileSummaryExtractionFailed) {
+    setFieldError("profileSummary", message);
+    toast.error(message);
+    return;
+  }
 
-      return;
-    }
+  toast.error(
+    limitReached
+      ? `${message} View plans or contact support for help.`
+      : message
+  );
+
+  return;
+}
+
 
     // Success
     form.reset();
