@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { FieldError, useFieldValidation } from "@/components/ui/field-validation";
 import type { ContactMessage, ResumeRequest, ResumeRequestStatus, UserAccount, AccountPlan } from "@/lib/resume-store";
 import { isSiteContent, type SiteContent } from "@/lib/site-content";
@@ -114,6 +114,14 @@ export function AdminPanel({
   const [busy, setBusy] = useState(false);
   const { errors, handleInvalid, handleInput, setFieldError } = useFieldValidation();
   const toast = useToast();
+  const loginFormRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (!twoFactorRequired || adminTotpCode.length !== 6 || busy) return;
+    const timeout = window.setTimeout(() => loginFormRef.current?.requestSubmit(), 0);
+    return () => window.clearTimeout(timeout);
+  }, [adminTotpCode, busy, twoFactorRequired]);
+
   function validationProps(key: string) {
     return {
       id: `admin-${key}`,
@@ -173,6 +181,7 @@ export function AdminPanel({
       toast.success("Signed in to the admin panel.");
     } catch (reason) {
       const message = reason instanceof Error ? reason.message : "Unable to sign in.";
+      if (twoFactorRequired) setAdminTotpCode("");
       if (message.includes("authenticator")) setFieldError("adminTotpCode", message);
       else if (message === "The email or password is incorrect.") setFieldError("adminPassword", message);
       else toast.error(message);
@@ -440,7 +449,7 @@ export function AdminPanel({
   if (!authenticated) {
     return <section className="card admin-login">
       <span className="eyebrow">Private workspace</span><h2>Admin sign in</h2><p>Sign in to review requests, users, and site content.</p>
-      <form className="admin-login-form" onSubmit={login} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
+      <form ref={loginFormRef} className="admin-login-form" onSubmit={login} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>
         <label htmlFor="admin-email">Admin email</label>
         <input className="form-field" id="admin-email" name="adminEmail" type="email" autoComplete="username" value={adminEmail} onChange={(event) => setAdminEmail(event.target.value)} required maxLength={254} aria-invalid={Boolean(errors.adminEmail)} aria-describedby={errors.adminEmail ? "admin-email-error" : undefined} />
         <FieldError id="admin-email-error" error={errors.adminEmail} />
@@ -449,7 +458,7 @@ export function AdminPanel({
         <FieldError id="admin-password-error" error={errors.adminPassword} />
         {twoFactorRequired && <>
           <label htmlFor="admin-totp-code">Authenticator code</label>
-          <input className="form-field" id="admin-totp-code" name="adminTotpCode" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={adminTotpCode} onChange={(event) => setAdminTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))} aria-invalid={Boolean(errors.adminTotpCode)} aria-describedby={errors.adminTotpCode ? "admin-totp-code-error" : undefined} />
+          <input className="form-field" id="admin-totp-code" name="adminTotpCode" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus value={adminTotpCode} onChange={(event) => setAdminTotpCode(event.target.value.replace(/\D/g, "").slice(0, 6))} aria-invalid={Boolean(errors.adminTotpCode)} aria-describedby={errors.adminTotpCode ? "admin-totp-code-error" : undefined} />
           <FieldError id="admin-totp-code-error" error={errors.adminTotpCode} />
         </>}
         <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Signing in..." : "Sign in"}</button>
