@@ -135,6 +135,7 @@ export async function POST(request: NextRequest) {
       console.error("Unable to extract text from the uploaded profile summary.", {
         fileType: summaryValue.name.slice(summaryValue.name.lastIndexOf(".")).toLowerCase(),
         errorName: error instanceof Error ? error.name : "UnknownError",
+        errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown extraction error.",
       });
       return NextResponse.json({
         error: "We couldn't extract text from that file. Use a valid text-based PDF, DOC, DOCX, or UTF-8 TXT file.",

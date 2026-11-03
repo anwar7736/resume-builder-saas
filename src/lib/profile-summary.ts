@@ -22,14 +22,9 @@ export async function extractProfileSummaryText(file: File) {
       document.getTextboxes({ includeHeadersAndFooters: false, includeBody: false }),
     ].filter(Boolean).join("\n");
   } else if (extension === ".pdf") {
-    const { DOMMatrix, ImageData, Path2D } = await import("@napi-rs/canvas");
-    Object.assign(globalThis, {
-      DOMMatrix: globalThis.DOMMatrix ?? DOMMatrix,
-      ImageData: globalThis.ImageData ?? ImageData,
-      Path2D: globalThis.Path2D ?? Path2D,
-    });
+    const { CanvasFactory } = await import("pdf-parse/worker");
     const { PDFParse } = await import("pdf-parse");
-    const parser = new PDFParse({ data: buffer });
+    const parser = new PDFParse({ data: buffer, CanvasFactory });
     try {
       text = (await parser.getText()).text;
     } finally {
