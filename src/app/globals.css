@@ -400,10 +400,13 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .content-loading { min-height: 50vh; }
 .support-widget { position: fixed; right: 26px; bottom: 26px; z-index: 45; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
 .support-button { position: relative; width: 64px; height: 64px; border: 0; border-radius: 50%; padding: 0; background: transparent; cursor: pointer; outline-offset: 4px; }
-.support-avatar { display: grid; width: 64px; height: 64px; overflow: hidden; place-items: center; border: 2px solid white; border-radius: 50%; background: #e6e2fb; box-shadow: 0 5px 20px #30226330; transition: transform .2s ease, box-shadow .2s ease; }
+.support-ripple { position: absolute; inset: 0; border: 2px solid #6c9cff80; border-radius: 50%; animation: support-ripple 2.4s ease-out infinite; pointer-events: none; }
+.support-ripple-delayed { animation-delay: 1.2s; }
+.support-avatar { position: relative; z-index: 1; display: grid; width: 64px; height: 64px; overflow: hidden; place-items: center; border: 2px solid white; border-radius: 50%; background: #e6e2fb; box-shadow: 0 5px 20px #30226330; transition: transform .2s ease, box-shadow .2s ease; }
 .support-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .support-button:hover .support-avatar, .support-button:focus-visible .support-avatar { transform: scale(1.05); box-shadow: 0 7px 24px #30226340; }
-.support-online-indicator { position: absolute; right: 1px; bottom: 4px; width: 13px; height: 13px; border: 2px solid #101116; border-radius: 50%; background: #23ce74; }
+.support-online-indicator { position: absolute; z-index: 2; right: 1px; bottom: 4px; width: 13px; height: 13px; border: 2px solid #101116; border-radius: 50%; background: #23ce74; }
+@keyframes support-ripple { 0% { opacity: .7; transform: scale(1); } 100% { opacity: 0; transform: scale(1.75); } }
 .support-panel { position: absolute; right: 0; bottom: calc(100% + 12px); width: 288px; max-width: calc(100vw - 34px); padding: 15px 12px 12px; border: 1px solid #292a31; border-radius: 22px; background: #101116; box-shadow: 0 16px 44px #08080c70; color: #f3f3f5; opacity: 0; pointer-events: none; transform: translateY(10px) scale(.97); transform-origin: bottom right; visibility: hidden; transition: opacity .18s ease, transform .18s ease, visibility .18s; }
 .support-panel.is-open { opacity: 1; pointer-events: auto; transform: translateY(0) scale(1); visibility: visible; }
 .support-panel-header { display: flex; min-height: 29px; align-items: center; justify-content: space-between; padding: 0 4px 5px 7px; }

@@ -96,6 +96,8 @@ export function SupportButton() {
       </div>
     </section>
     <button className="support-button" ref={triggerRef} type="button" aria-label={open ? "Close contact options" : "Open contact options"} aria-expanded={open} aria-controls="support-contact-panel" onClick={() => setOpen((value) => !value)}>
+      <span className="support-ripple" aria-hidden="true" />
+      <span className="support-ripple support-ripple-delayed" aria-hidden="true" />
       <span className="support-avatar"><Image src={avatar} alt="" width={64} height={64} loading="eager" unoptimized /></span>
       <span className="support-online-indicator" aria-label="Available" />
     </button>
