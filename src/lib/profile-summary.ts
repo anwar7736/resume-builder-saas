@@ -1,7 +1,3 @@
-import { PDFParse } from "pdf-parse";
-import mammoth from "mammoth";
-import WordExtractor from "word-extractor";
-
 const maximumExtractedCharacters = 30_000;
 
 export async function extractProfileSummaryText(file: File) {
@@ -12,9 +8,11 @@ export async function extractProfileSummaryText(file: File) {
   if (extension === ".txt") {
     text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
   } else if (extension === ".docx") {
+    const mammoth = await import("mammoth");
     const result = await mammoth.extractRawText({ buffer });
     text = result.value;
   } else if (extension === ".doc") {
+    const WordExtractor = (await import("word-extractor")).default;
     const document = await new WordExtractor().extract(buffer);
     text = [
       document.getBody(),
@@ -24,6 +22,13 @@ export async function extractProfileSummaryText(file: File) {
       document.getTextboxes({ includeHeadersAndFooters: false, includeBody: false }),
     ].filter(Boolean).join("\n");
   } else if (extension === ".pdf") {
+    const { DOMMatrix, ImageData, Path2D } = await import("@napi-rs/canvas");
+    Object.assign(globalThis, {
+      DOMMatrix: globalThis.DOMMatrix ?? DOMMatrix,
+      ImageData: globalThis.ImageData ?? ImageData,
+      Path2D: globalThis.Path2D ?? Path2D,
+    });
+    const { PDFParse } = await import("pdf-parse");
     const parser = new PDFParse({ data: buffer });
     try {
       text = (await parser.getText()).text;

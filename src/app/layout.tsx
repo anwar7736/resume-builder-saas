@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist_Mono, Manrope } from "next/font/google";
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
-import { PwaInstallPrompt } from "@/components/layout/pwa-install-prompt";
 import { PwaRegistration } from "@/components/layout/pwa-registration";
 import { RouteTransition } from "@/components/layout/route-transition";
 import { ScrollToTop } from "@/components/layout/scroll-to-top";
@@ -63,7 +62,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <Footer />
           <SupportButton />
           <ScrollToTop />
-          <PwaInstallPrompt />
         </ToastProvider>
       </body>
     </html>

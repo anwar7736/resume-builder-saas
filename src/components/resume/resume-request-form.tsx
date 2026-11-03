@@ -62,150 +62,82 @@ export function ResumeRequestForm({
   const initialValues = getInitialValues(name, email, initialRequest);
 
   
-async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-  event.preventDefault();
-
-  const form = event.currentTarget;
-  const formData = new FormData(form);
-
-  const profilePhoto = formData.get("profilePhoto");
-  const profileSummary = formData.get("profileSummary");
-
-  // Validate profile photo
-  if (profilePhoto instanceof File && profilePhoto.size > 0) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type)) {
-      setFieldError(
-        "profilePhoto",
-        "Choose a JPG, PNG, or WebP profile photo."
-      );
-      return;
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const profilePhoto = formData.get("profilePhoto");
+    const profileSummary = formData.get("profileSummary");
+    if (profilePhoto instanceof File && profilePhoto.size > 0) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(profilePhoto.type)) {
+        setFieldError("profilePhoto", "Choose a JPG, PNG, or WebP profile photo.");
+        return;
+      }
+      if (profilePhoto.size > maximumImageSize) {
+        setFieldError("profilePhoto", "The profile photo must be 5 MB or smaller.");
+        return;
+      }
+      setFieldError("profilePhoto", "");
     }
-
-    if (profilePhoto.size > maximumImageSize) {
-      setFieldError(
-        "profilePhoto",
-        "The profile photo must be 5 MB or smaller."
-      );
-      return;
+    if (profileSummary instanceof File && profileSummary.size > 0) {
+      const extension = profileSummary.name.slice(profileSummary.name.lastIndexOf(".")).toLowerCase();
+      if (![".pdf", ".doc", ".docx", ".txt"].includes(extension)) {
+        setFieldError("profileSummary", "Choose a PDF, DOC, DOCX, or TXT profile summary file.");
+        return;
+      }
+      if (profileSummary.size > maximumSummaryFileSize) {
+        setFieldError("profileSummary", "The profile summary file must be 10 MB or smaller.");
+        return;
+      }
     }
-
-    setFieldError("profilePhoto", "");
-  }
-
-  // Validate profile summary
-  if (profileSummary instanceof File && profileSummary.size > 0) {
-    const extension = profileSummary.name
-      .slice(profileSummary.name.lastIndexOf("."))
-      .toLowerCase();
-
-    if (![".pdf", ".doc", ".docx", ".txt"].includes(extension)) {
-      setFieldError(
-        "profileSummary",
-        "Choose a PDF, DOC, DOCX, or TXT profile summary file."
-      );
-      return;
-    }
-
-    if (profileSummary.size > maximumSummaryFileSize) {
-      setFieldError(
-        "profileSummary",
-        "The profile summary file must be 10 MB or smaller."
-      );
-      return;
-    }
-  }
-
-  setFieldError("profileSummary", "");
-  setBusy(true);
-
-  try {
-    const response = await fetch("/api/resume-requests", {
-      method: "POST",
-      body: formData,
-    });
-
-    // Read response as text first to prevent JSON parsing errors
-    const responseText = await response.text();
-
-    let result: unknown;
-
+    setFieldError("profileSummary", "");
+    setBusy(true);
     try {
-      result = responseText ? JSON.parse(responseText) : {};
-    } catch {
-      throw new Error(
-        `API Error (HTTP ${response.status}): ${
-          responseText || "Empty response from server."
-        }`
-      );
+      const response = await fetch("/api/resume-requests", {
+        method: "POST",
+        body: formData,
+      });
+      const responseText = await response.text();
+      let result: unknown = {};
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch {
+          if (response.ok) {
+            console.error("The resume request API returned an invalid response.");
+            toast.error("The server returned an invalid response. Please try again later.");
+            return;
+          }
+        }
+      } else if (response.ok) {
+        console.error("The resume request API returned an empty response.");
+        toast.error("The server returned an invalid response. Please try again later.");
+        return;
+      }
+      if (!response.ok) {
+        const limitReached = typeof result === "object" && result !== null && "code" in result && result.code === "plan_limit_reached";
+        const profileSummaryExtractionFailed = typeof result === "object" && result !== null &&
+          "code" in result && result.code === "profile_summary_extraction_failed";
+        const message = typeof result === "object" && result !== null && "error" in result && typeof result.error === "string"
+          ? result.error
+          : `The server couldn't process your request (HTTP ${response.status}). Please try again later.`;
+        if (profileSummaryExtractionFailed) {
+          setFieldError("profileSummary", message);
+          return;
+        }
+        toast.error(limitReached ? `${message} View plans or contact support for help.` : message);
+        return;
+      }
+      form.reset();
+      clearErrors();
+      toast.success("Your resume information has been sent to our resume workflow.");
+    } catch (error) {
+      console.error("Unable to submit a resume request.", error);
+      toast.error("We couldn't reach the server. Please check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-
-    // Handle unsuccessful API responses
-    
-if (!response.ok) {
-  const isObject = (
-    value: unknown
-  ): value is Record<string, unknown> => {
-    return typeof value === "object" && value !== null;
-  };
-
-  const data = isObject(result) ? result : {};
-
-  const limitReached =
-    data.code === "plan_limit_reached";
-
-  const profileSummaryExtractionFailed =
-    data.code === "profile_summary_extraction_failed";
-
-  const message =
-    typeof data.error === "string"
-      ? data.error
-      : `Request failed with HTTP ${response.status}.`;
-
-  if (profileSummaryExtractionFailed) {
-    setFieldError("profileSummary", message);
-    toast.error(message);
-    return;
   }
-
-  toast.error(
-    limitReached
-      ? `${message} View plans or contact support for help.`
-      : message
-  );
-
-  return;
-}
-
-
-    // Success
-    form.reset();
-    clearErrors();
-
-    toast.success(
-      "Your resume information has been sent to our resume workflow."
-    );
-
-  } catch (error) {
-    // Show actual error on mobile screen
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : String(error);
-
-    console.error("Resume Request Error:", error);
-
-    // Actual error
-    toast.error(errorMessage);
-
-    // Keep previous static message
-    toast.error(
-      "We couldn't reach the server. Please check your connection and try again."
-    );
-
-  } finally {
-    setBusy(false);
-  }
-}
 
   return (
     <form className="card form-card resume-request-form" onSubmit={handleSubmit} onInvalidCapture={handleInvalid} onInputCapture={handleInput} onChangeCapture={handleInput}>

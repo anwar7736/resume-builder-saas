@@ -5,6 +5,7 @@ import { FileText, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { authStateChangedEvent } from "@/components/auth/auth-state";
 import { ButtonLink } from "@/components/ui/button-link";
+import { PwaInstallPrompt } from "@/components/layout/pwa-install-prompt";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -62,6 +63,7 @@ export function Navbar() {
         </Link>
         <nav className="nav-links" aria-label="Main navigation">{links.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}</nav>
         <div className="nav-actions">
+          <PwaInstallPrompt />
           <ButtonLink href={signedIn ? "/account" : "/login"} variant="secondary" small>{signedIn ? "My account" : labels.account}</ButtonLink>
           <ButtonLink href="/build" small>{labels.build}</ButtonLink>
         </div>

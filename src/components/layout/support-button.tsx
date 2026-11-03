@@ -85,11 +85,11 @@ export function SupportButton() {
         <button className="support-close" type="button" aria-label="Close contact options" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}><X size={17} /></button>
       </header>
       <div className="support-contact-list">
-        {options.map((item) => <a className={`support-contact-link ${item.className}`} href={item.href} key={item.label} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} tabIndex={open ? 0 : -1}>
+        {options.map((item) => <a className={`support-contact-link ${item.className}`} href={item.href} key={item.label} target={item.href.startsWith("http") ? "_blank" : undefined} rel={item.href.startsWith("http") ? "noreferrer" : undefined} tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}>
           <span className="support-contact-icon" aria-hidden="true">{item.icon}</span>
           <span className="support-contact-copy"><strong>{item.label}</strong><small>{item.description}</small></span>
         </a>)}
-        <Link className="support-contact-link support-option-chat" href="/contact" tabIndex={open ? 0 : -1}>
+        <Link className="support-contact-link support-option-chat" href="/contact" tabIndex={open ? 0 : -1} onClick={() => setOpen(false)}>
           <span className="support-contact-icon" aria-hidden="true"><MessagesSquare size={20} /></span>
           <span className="support-contact-copy"><strong>Contact form</strong><small>Send us a message</small></span>
         </Link>

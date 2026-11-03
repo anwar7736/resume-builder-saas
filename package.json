@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@napi-rs/canvas": "^0.1.100",
     "lucide-react": "^1.59.0",
     "mammoth": "^1.13.0",
     "mongodb": "^7.7.0",

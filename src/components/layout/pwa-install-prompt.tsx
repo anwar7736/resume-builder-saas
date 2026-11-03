@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, X } from "lucide-react";
+import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useToast } from "@/components/ui/toast-provider";
 
@@ -11,7 +11,6 @@ interface InstallPromptEvent extends Event {
 
 export function PwaInstallPrompt() {
   const [installPrompt, setInstallPrompt] = useState<InstallPromptEvent | null>(null);
-  const [dismissed, setDismissed] = useState(false);
   const [installed, setInstalled] = useState(false);
   const toast = useToast();
 
@@ -35,7 +34,10 @@ export function PwaInstallPrompt() {
   }, []);
 
   const install = async () => {
-    if (!installPrompt) return;
+    if (!installPrompt) {
+      toast.error("Installation is unavailable. Try your browser menu instead.");
+      return;
+    }
 
     try {
       await installPrompt.prompt();
@@ -48,26 +50,12 @@ export function PwaInstallPrompt() {
     }
   };
 
-  if (!installPrompt || dismissed || installed) return null;
+  if (installed) return null;
 
   return (
-    <aside className="pwa-install" aria-label="Install ResumeCraft">
-      <div className="pwa-install-copy">
-        <strong>Take ResumeCraft with you</strong>
-        <span>Install the app for quick access from your home screen.</span>
-      </div>
-      <button className="pwa-install-action" type="button" onClick={install}>
+      <button className="button button-primary button-small pwa-install-action" type="button" onClick={install}>
         <Download size={16} aria-hidden="true" />
-        Install
+        Install App
       </button>
-      <button
-        className="pwa-install-dismiss"
-        type="button"
-        aria-label="Dismiss install prompt"
-        onClick={() => setDismissed(true)}
-      >
-        <X size={16} aria-hidden="true" />
-      </button>
-    </aside>
   );
 }

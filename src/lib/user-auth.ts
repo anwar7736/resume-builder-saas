@@ -1,5 +1,6 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
 import { getUserIdFromSession, userCookieName } from "@/lib/admin-session";
 import { findUserById, type UserAccount } from "@/lib/resume-store";
 
@@ -25,6 +26,7 @@ export async function verifyPassword(password: string, salt: string, hash: strin
 }
 
 export async function getCurrentUser(): Promise<UserAccount | null> {
+  await connection();
   const cookieStore = await cookies();
   const userId = getUserIdFromSession(cookieStore.get(userCookieName)?.value);
   return userId ? findUserById(userId) : null;
