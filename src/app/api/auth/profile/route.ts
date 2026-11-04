@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getUserIdFromSession, userCookieName } from "@/lib/admin-session";
 import { findUserCredentialsById, updateUserProfile } from "@/lib/resume-store";
-import { normalizeEmail, verifyPassword } from "@/lib/user-auth";
+import { hashPassword, normalizeEmail, verifyPassword } from "@/lib/user-auth";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -27,9 +27,26 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ error: "Submit valid profile details." }, { status: 400 });
   }
   if (!isRecord(payload) || typeof payload.name !== "string" ||
-      typeof payload.email !== "string" || typeof payload.password !== "string" ||
-      payload.password.length === 0 || payload.password.length > 128) {
+      typeof payload.email !== "string" || typeof payload.currentPassword !== "string" ||
+      payload.currentPassword.length === 0 || payload.currentPassword.length > 128 ||
+      (payload.newPassword !== undefined && typeof payload.newPassword !== "string") ||
+      (payload.confirmPassword !== undefined && typeof payload.confirmPassword !== "string")) {
     return NextResponse.json({ error: "Enter your name, email, and current password." }, { status: 400 });
+  }
+
+  const newPassword = payload.newPassword ?? "";
+  const confirmPassword = payload.confirmPassword ?? "";
+  if (newPassword.length > 0 && (newPassword.length < 8 || newPassword.length > 128)) {
+    return NextResponse.json({
+      error: "New password must be between 8 and 128 characters.",
+      code: "invalid_new_password",
+    }, { status: 400 });
+  }
+  if ((newPassword.length > 0 || confirmPassword.length > 0) && newPassword !== confirmPassword) {
+    return NextResponse.json({
+      error: "New password and confirmation do not match.",
+      code: "password_mismatch",
+    }, { status: 400 });
   }
 
   const name = payload.name.trim();
@@ -41,11 +58,12 @@ export async function PATCH(request: NextRequest) {
   try {
     const user = await findUserCredentialsById(userId);
     if (!user) return NextResponse.json({ error: "Account not found." }, { status: 404 });
-    if (!await verifyPassword(payload.password, user.passwordSalt, user.passwordHash)) {
+    if (!await verifyPassword(payload.currentPassword, user.passwordSalt, user.passwordHash)) {
       return NextResponse.json({ error: "Your current password is incorrect." }, { status: 403 });
     }
 
-    const updated = await updateUserProfile(userId, { name, email });
+    const credentials = newPassword ? await hashPassword(newPassword) : {};
+    const updated = await updateUserProfile(userId, { name, email, ...credentials });
     return updated
       ? NextResponse.json({ success: true, profile: { name, email } })
       : NextResponse.json({ error: "Account not found." }, { status: 404 });

@@ -31,7 +31,7 @@ npm run dev
 - `/` — home page and plans
 - `/register`, `/login` — create/sign into a customer account
 - `/build` — sign-in-required resume request form
-- `/account` — edit your profile with current-password confirmation, view your plan, generated resumes, and request history
+- `/account` — update your profile or password with current-password confirmation, view your plan, generated resumes, and request history
 - `/pricing` — Free, Premium, and Platinum plan details
 - `/admin` — unlinked private admin entry; manage resume requests, contact messages, user accounts, website copy, support details, and n8n settings
 - `/about`, `/contact`, `/privacy`, `/terms` — public information pages

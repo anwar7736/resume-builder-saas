@@ -14,7 +14,9 @@ function responseError(value: unknown, fallback: string) {
 export function ProfileSettings({ name: initialName, email: initialEmail }: { name: string; email: string }) {
   const [name, setName] = useState(initialName);
   const [email, setEmail] = useState(initialEmail);
-  const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const router = useRouter();
   const toast = useToast();
@@ -28,20 +30,27 @@ export function ProfileSettings({ name: initialName, email: initialEmail }: { na
       const response = await fetch("/api/auth/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, currentPassword, newPassword, confirmPassword }),
       });
       const result: unknown = await response.json();
       if (!response.ok) {
         const message = responseError(result, "Unable to update your profile.");
-        if (response.status === 403) setFieldError("password", message);
+        const code = typeof result === "object" && result !== null && "code" in result
+          ? result.code
+          : undefined;
+        if (response.status === 403) setFieldError("currentPassword", message);
         else if (response.status === 409) setFieldError("email", message);
+        else if (code === "invalid_new_password") setFieldError("newPassword", message);
+        else if (code === "password_mismatch") setFieldError("confirmPassword", message);
         else toast.error(message);
         return;
       }
       setName(name.trim());
       setEmail(email.trim().toLowerCase());
-      setPassword("");
-      toast.success("Your profile has been updated.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(newPassword ? "Your profile and password have been updated." : "Your profile has been updated.");
       router.refresh();
     } catch {
       toast.error("We couldn't reach the server. Please try again.");
@@ -53,7 +62,7 @@ export function ProfileSettings({ name: initialName, email: initialEmail }: { na
   return <section className="card profile-settings">
     <div>
       <h2>Profile details</h2>
-      <p>Confirm your current password to save changes to your name or email.</p>
+      <p>Enter your current password to save profile changes or set a new password.</p>
     </div>
     <form onSubmit={submit} onInvalidCapture={handleInvalid} onInputCapture={handleInput}>
       <div className="form-group">
@@ -67,9 +76,19 @@ export function ProfileSettings({ name: initialName, email: initialEmail }: { na
         <FieldError id="profile-email-error" error={errors.email} />
       </div>
       <div className="form-group">
-        <label htmlFor="profile-password">Current password</label>
-        <input className="form-field" id="profile-password" name="password" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} aria-invalid={Boolean(errors.password)} aria-describedby={errors.password ? "profile-password-error" : undefined} />
-        <FieldError id="profile-password-error" error={errors.password} />
+        <label htmlFor="profile-current-password">Current password</label>
+        <input className="form-field" id="profile-current-password" name="currentPassword" type="password" autoComplete="current-password" required maxLength={128} value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} aria-invalid={Boolean(errors.currentPassword)} aria-describedby={errors.currentPassword ? "profile-current-password-error" : undefined} />
+        <FieldError id="profile-current-password-error" error={errors.currentPassword} />
+      </div>
+      <div className="form-group">
+        <label htmlFor="profile-new-password">New password <small>(optional)</small></label>
+        <input className="form-field" id="profile-new-password" name="newPassword" type="password" autoComplete="new-password" minLength={8} maxLength={128} value={newPassword} onChange={(event) => setNewPassword(event.target.value)} aria-invalid={Boolean(errors.newPassword)} aria-describedby={errors.newPassword ? "profile-new-password-error" : undefined} />
+        <FieldError id="profile-new-password-error" error={errors.newPassword} />
+      </div>
+      <div className="form-group">
+        <label htmlFor="profile-confirm-password">Confirm new password <small>(optional)</small></label>
+        <input className="form-field" id="profile-confirm-password" name="confirmPassword" type="password" autoComplete="new-password" maxLength={128} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} aria-invalid={Boolean(errors.confirmPassword)} aria-describedby={errors.confirmPassword ? "profile-confirm-password-error" : undefined} />
+        <FieldError id="profile-confirm-password-error" error={errors.confirmPassword} />
       </div>
       <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Saving..." : "Save profile"}</button>
     </form>

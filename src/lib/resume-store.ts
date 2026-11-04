@@ -253,7 +253,12 @@ export async function updateUser(id: string, input: { name: string; email: strin
   return result.matchedCount === 1;
 }
 
-export async function updateUserProfile(id: string, input: { name: string; email: string }) {
+export async function updateUserProfile(id: string, input: {
+  name: string;
+  email: string;
+  passwordHash?: string;
+  passwordSalt?: string;
+}) {
   if (!ObjectId.isValid(id)) return false;
   const result = await (await getDatabase()).collection<UserDocument>("users").updateOne(
     { _id: new ObjectId(id) },
