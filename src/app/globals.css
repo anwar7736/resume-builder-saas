@@ -246,7 +246,9 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .two-factor-setup { display: grid; justify-items: start; gap: 14px; }
 .two-factor-setup > img { border: 1px solid var(--line); border-radius: 12px; background: white; }
 .two-factor-secret { display: grid; gap: 5px; }
+.two-factor-secret-value { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .two-factor-secret code { padding: 9px 11px; border: 1px solid var(--line); border-radius: 7px; background: #f5f4f2; font-size: 13px; letter-spacing: .08em; overflow-wrap: anywhere; }
+.two-factor-secret-value code { min-width: 0; flex: 1; }
 .two-factor-setup .two-factor-form { width: min(100%, 500px); }
 .admin-request-list { display: grid; gap: 14px; }
 .admin-request { padding: 22px; }
@@ -426,7 +428,7 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .support-option-facebook .support-contact-icon { background: #1877f2; }
 .support-option-email .support-contact-icon { background: #6a5be3; }
 .support-option-chat .support-contact-icon { background: #e85252; }
-.scroll-to-top { position: fixed; right: 105px; bottom: 34px; z-index: 44; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #ffffff; border-radius: 50%; background: #29263e; box-shadow: 0 6px 22px #201a4538; color: #fff; cursor: pointer; transition: transform .2s, background .2s; }
+.scroll-to-top { position: fixed; left: 105px; bottom: 34px; z-index: 44; width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid #ffffff; border-radius: 50%; background: #29263e; box-shadow: 0 6px 22px #201a4538; color: #fff; cursor: pointer; transition: transform .2s, background .2s; }
 .scroll-to-top:hover { transform: translateY(-3px); background: var(--purple); }
 .account-auth-page { min-height: 68vh; display: grid; place-items: center; padding: 70px 20px; background: radial-gradient(ellipse at 50% 10%, #f0edff 0, transparent 62%); }
 .account-auth-card { width: min(100%, 450px); padding: 38px; border-radius: 22px; box-shadow: 0 24px 70px #30226312; }
@@ -484,7 +486,7 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 
 @media (max-width: 680px) {
   .support-widget { right: 17px; bottom: 18px; }
-  .scroll-to-top { right: 88px; bottom: 25px; width: 44px; height: 44px; }
+  .scroll-to-top { left: 88px; bottom: 25px; width: 44px; height: 44px; }
   .account-auth-card { padding: 28px 22px; }
   .account-summary { grid-template-columns: 1fr; }
   .account-stat, .account-build-card { min-height: 120px; }

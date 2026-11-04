@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Copy } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { FieldError } from "@/components/ui/field-validation";
 import { useToast } from "@/components/ui/toast-provider";
@@ -34,6 +35,40 @@ export function TwoFactorSettings({ scope }: { scope: "user" | "admin" }) {
   const [generalError, setGeneralError] = useState("");
   const toast = useToast();
   const endpoint = scope === "admin" ? "/api/admin/two-factor" : "/api/auth/two-factor";
+
+  function validationMessage(input: HTMLInputElement) {
+    if (input.validity.valueMissing) {
+      return input.name === "password" ? "Enter your current password." : "Enter the 6-digit authenticator code.";
+    }
+    if (input.name === "code" && input.validity.patternMismatch) return "Enter a 6-digit authenticator code.";
+    return input.validationMessage;
+  }
+
+  function handleInvalid(event: FormEvent<HTMLFormElement>) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    event.preventDefault();
+    const message = validationMessage(input);
+    if (input.name === "password") setPasswordError(message);
+    if (input.name === "code") setCodeError(message);
+  }
+
+  function handleInput(event: FormEvent<HTMLFormElement>) {
+    const input = event.target;
+    if (!(input instanceof HTMLInputElement)) return;
+    const message = input.validity.valid ? "" : validationMessage(input);
+    if (input.name === "password") setPasswordError(message);
+    if (input.name === "code") setCodeError(message);
+  }
+
+  async function copySetupKey(secret: string) {
+    try {
+      await navigator.clipboard.writeText(secret);
+      toast.success("Authenticator setup key copied.");
+    } catch {
+      toast.error("Unable to copy the setup key. Please copy it manually.");
+    }
+  }
 
   useEffect(() => {
     let active = true;
@@ -110,10 +145,10 @@ export function TwoFactorSettings({ scope }: { scope: "user" | "admin" }) {
         : "Add a second sign-in step using an authenticator app such as Google Authenticator, Microsoft Authenticator, or 1Password."}</p>
     </div>
     {generalError && <p className="form-error" role="alert">{generalError}</p>}
-    {!enabled && !setup && <form className="two-factor-form" onSubmit={(event) => void submit("setup", event)}>
+    {!enabled && !setup && <form className="two-factor-form" onSubmit={(event) => void submit("setup", event)} onInvalidCapture={handleInvalid} onInputCapture={handleInput}>
       <label className="form-group">
         Current password
-        <input className="form-field" name="password" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(event) => { setPassword(event.target.value); setPasswordError(""); }} aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? "two-factor-password-error" : undefined} />
+        <input className="form-field" name="password" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? "two-factor-password-error" : undefined} />
         <FieldError id="two-factor-password-error" error={passwordError} />
       </label>
       <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Preparing..." : "Set up authenticator"}</button>
@@ -121,25 +156,25 @@ export function TwoFactorSettings({ scope }: { scope: "user" | "admin" }) {
     {setup && <div className="two-factor-setup">
       <p>Scan this QR code in your authenticator app. You can also enter the setup key manually.</p>
       <Image src={setup.qrCodeDataUrl} alt="Authenticator setup QR code" width={240} height={240} unoptimized />
-      <p className="two-factor-secret"><strong>Setup key</strong><code>{setup.secret}</code></p>
-      <form className="two-factor-form" onSubmit={(event) => void submit("enable", event)}>
+      <div className="two-factor-secret"><strong>Setup key</strong><div className="two-factor-secret-value"><code>{setup.secret}</code><button className="button button-secondary button-small" type="button" onClick={() => void copySetupKey(setup.secret)}><Copy size={15} aria-hidden="true" />Copy key</button></div></div>
+      <form className="two-factor-form" onSubmit={(event) => void submit("enable", event)} onInvalidCapture={handleInvalid} onInputCapture={handleInput}>
         <label className="form-group">
           6-digit authenticator code
-          <input className="form-field" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "").slice(0, 6)); setCodeError(""); }} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "two-factor-code-error" : undefined} />
+          <input className="form-field" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "two-factor-code-error" : undefined} />
           <FieldError id="two-factor-code-error" error={codeError} />
         </label>
         <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Verifying..." : "Verify and enable"}</button>
       </form>
     </div>}
-    {enabled && <form className="two-factor-form" onSubmit={(event) => void submit("disable", event)}>
+    {enabled && <form className="two-factor-form" onSubmit={(event) => void submit("disable", event)} onInvalidCapture={handleInvalid} onInputCapture={handleInput}>
       <label className="form-group">
         Current password
-        <input className="form-field" name="password" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(event) => { setPassword(event.target.value); setPasswordError(""); }} aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? "two-factor-password-error" : undefined} />
+        <input className="form-field" name="password" type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={(event) => setPassword(event.target.value)} aria-invalid={Boolean(passwordError)} aria-describedby={passwordError ? "two-factor-password-error" : undefined} />
         <FieldError id="two-factor-password-error" error={passwordError} />
       </label>
       <label className="form-group">
         6-digit authenticator code
-        <input className="form-field" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => { setCode(event.target.value.replace(/\D/g, "").slice(0, 6)); setCodeError(""); }} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "two-factor-code-error" : undefined} />
+        <input className="form-field" name="code" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))} aria-invalid={Boolean(codeError)} aria-describedby={codeError ? "two-factor-code-error" : undefined} />
         <FieldError id="two-factor-code-error" error={codeError} />
       </label>
       <button className="button button-secondary" type="submit" disabled={busy}>{busy ? "Updating..." : "Disable two-factor authentication"}</button>
