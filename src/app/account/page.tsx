@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AccountActions } from "@/components/account/account-actions";
+import { ProfileSettings } from "@/components/account/profile-settings";
 import { ResumeActions } from "@/components/account/resume-actions";
 import { TwoFactorSettings } from "@/components/auth/two-factor-settings";
 import { getGeneratedResumes, getResumeRequests, getSiteContent } from "@/lib/resume-store";
@@ -35,6 +36,7 @@ async function AccountPageContent() {
       <article className="card account-stat"><span>Resume requests</span><strong>{user.resumeCount}</strong><small>Used so far</small></article>
       <Link className="card account-build-card" href="/build"><span className="feature-icon">+</span><strong>Build a resume</strong><small>Share your career information</small></Link>
     </div>
+    <ProfileSettings name={user.name} email={user.email} />
     <TwoFactorSettings scope="user" />
     <div className="account-requests-heading"><h2>Your resumes</h2><span>{resumes.length} total</span></div>
     {!resumes.length ? <div className="card admin-empty account-empty"><h3>No completed resumes yet</h3><p>Your generated resumes will appear here after the resume workflow uploads them.</p></div> :

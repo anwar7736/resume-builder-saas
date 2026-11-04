@@ -253,6 +253,15 @@ export async function updateUser(id: string, input: { name: string; email: strin
   return result.matchedCount === 1;
 }
 
+export async function updateUserProfile(id: string, input: { name: string; email: string }) {
+  if (!ObjectId.isValid(id)) return false;
+  const result = await (await getDatabase()).collection<UserDocument>("users").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: input },
+  );
+  return result.matchedCount === 1;
+}
+
 export async function deleteUser(id: string) {
   if (!ObjectId.isValid(id)) return false;
   const db = await getDatabase();
