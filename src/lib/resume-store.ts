@@ -81,6 +81,13 @@ type GeneratedResumeDocument = Omit<GeneratedResume, "id"> & {
   fileData: string;
 };
 type ContactRateLimitDocument = { _id: string; count: number; expiresAt: Date };
+type PasswordResetTokenDocument = {
+  _id: string;
+  userId: string;
+  otpHash?: string;
+  attempts?: number;
+  expiresAt: Date;
+};
 
 const settingsId = "site-settings";
 const contactRateWindowMs = 15 * 60_000;
@@ -88,6 +95,8 @@ const contactRateLimit = 5;
 let contactRateLimitIndexPromise: Promise<void> | undefined;
 let generatedResumeIndexPromise: Promise<void> | undefined;
 let twoFactorRateLimitIndexPromise: Promise<void> | undefined;
+let passwordResetRateLimitIndexPromise: Promise<void> | undefined;
+let passwordResetTokenIndexPromise: Promise<void> | undefined;
 
 function toUserAccount(user: UserDocument): UserAccount {
   return {
@@ -138,6 +147,91 @@ export async function createUser(input: {
 export async function findUserByEmail(email: string) {
   const user = await (await getDatabase()).collection<UserDocument>("users").findOne({ email });
   return user;
+}
+
+export async function updateUserPassword(id: string, passwordHash: string, passwordSalt: string) {
+  if (!ObjectId.isValid(id)) return false;
+  const db = await getDatabase();
+  const result = await db.collection<UserDocument>("users").updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { passwordHash, passwordSalt } },
+  );
+  if (result.matchedCount !== 1) return false;
+  await db.collection<PasswordResetTokenDocument>("passwordResetTokens").deleteMany({ userId: id });
+  return true;
+}
+
+function getPasswordResetSecret() {
+  const secret = process.env.AUTH_SECRET?.trim() || process.env.ADMIN_SESSION_SECRET?.trim();
+  if (!secret || secret.length < 32) throw new Error("A session secret is required for password reset.");
+  return secret;
+}
+
+export async function createPasswordResetOtp(userId: string, otp: string, expiresAt: Date) {
+  const collection = (await getDatabase()).collection<PasswordResetTokenDocument>("passwordResetTokens");
+  if (!passwordResetTokenIndexPromise) {
+    passwordResetTokenIndexPromise = collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        passwordResetTokenIndexPromise = undefined;
+        throw error;
+      });
+  }
+  await passwordResetTokenIndexPromise;
+  await collection.deleteMany({ userId });
+  const otpHash = createHmac("sha256", getPasswordResetSecret()).update(`${userId}:${otp}`).digest("hex");
+  await collection.insertOne({ _id: userId, userId, otpHash, attempts: 0, expiresAt });
+}
+
+export async function deletePasswordResetOtp(userId: string) {
+  await (await getDatabase()).collection<PasswordResetTokenDocument>("passwordResetTokens")
+    .deleteOne({ _id: userId });
+}
+
+export async function consumePasswordResetOtp(userId: string, otp: string) {
+  const collection = (await getDatabase()).collection<PasswordResetTokenDocument>("passwordResetTokens");
+  const otpHash = createHmac("sha256", getPasswordResetSecret()).update(`${userId}:${otp}`).digest("hex");
+  const now = new Date();
+  const result = await collection.deleteOne({
+    _id: userId,
+    otpHash,
+    expiresAt: { $gt: now },
+    attempts: { $lt: 5 },
+  });
+  if (result.deletedCount === 1) return true;
+  await collection.updateOne(
+    { _id: userId, expiresAt: { $gt: now }, attempts: { $lt: 5 } },
+    { $inc: { attempts: 1 } },
+  );
+  return false;
+}
+
+export async function consumePasswordResetRateLimit(subject: string, limit: number) {
+  const secret = getPasswordResetSecret();
+  const collection = (await getDatabase()).collection<ContactRateLimitDocument>("passwordResetRateLimits");
+  if (!passwordResetRateLimitIndexPromise) {
+    passwordResetRateLimitIndexPromise = collection.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 })
+      .then(() => undefined)
+      .catch((error: unknown) => {
+        passwordResetRateLimitIndexPromise = undefined;
+        throw error;
+      });
+  }
+  await passwordResetRateLimitIndexPromise;
+  const now = Date.now();
+  const windowId = Math.floor(now / contactRateWindowMs);
+  const subjectHash = createHmac("sha256", secret).update(subject).digest("hex");
+  const id = `${subjectHash}:${windowId}`;
+  await collection.updateOne(
+    { _id: id },
+    {
+      $inc: { count: 1 },
+      $setOnInsert: { expiresAt: new Date((windowId + 2) * contactRateWindowMs) },
+    },
+    { upsert: true },
+  );
+  const rate = await collection.findOne({ _id: id }, { projection: { count: 1 } });
+  return rate !== null && rate.count <= limit;
 }
 
 export async function findUserCredentialsById(id: string) {
@@ -260,10 +354,14 @@ export async function updateUserProfile(id: string, input: {
   passwordSalt?: string;
 }) {
   if (!ObjectId.isValid(id)) return false;
-  const result = await (await getDatabase()).collection<UserDocument>("users").updateOne(
+  const db = await getDatabase();
+  const result = await db.collection<UserDocument>("users").updateOne(
     { _id: new ObjectId(id) },
     { $set: input },
   );
+  if (result.matchedCount === 1 && input.passwordHash) {
+    await db.collection<PasswordResetTokenDocument>("passwordResetTokens").deleteMany({ userId: id });
+  }
   return result.matchedCount === 1;
 }
 
@@ -276,6 +374,7 @@ export async function deleteUser(id: string) {
   await Promise.all([
     db.collection<RequestDocument>("resumeRequests").deleteMany({ userId: id }),
     db.collection<GeneratedResumeDocument>("generatedResumes").deleteMany({ userId: id }),
+    db.collection<PasswordResetTokenDocument>("passwordResetTokens").deleteMany({ userId: id }),
   ]);
   const result = await db.collection<UserDocument>("users").deleteOne({ _id: userId });
   return result.deletedCount === 1;

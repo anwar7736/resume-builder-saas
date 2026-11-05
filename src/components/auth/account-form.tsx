@@ -97,6 +97,7 @@ export function AccountForm({ mode }: { mode: "login" | "register" }) {
       {twoFactorRequired && <div className="form-group"><label htmlFor="account-totp-code">Authenticator code</label><input className="form-field" id="account-totp-code" name="totpCode" type="text" inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required autoFocus value={twoFactorCode} onChange={(event) => { setTwoFactorCode(event.target.value.replace(/\D/g, "").slice(0, 6)); }} aria-invalid={Boolean(errors.totpCode)} aria-describedby={errors.totpCode ? "account-totp-code-error" : undefined} /><FieldError id="account-totp-code-error" error={errors.totpCode} /></div>}
       <button className="button button-primary" type="submit" disabled={busy}>{busy ? "Please wait..." : registering ? "Create account" : "Sign in"}</button>
     </form>
+    {!registering && <p className="auth-switch"><Link href="/forgot-password">Forgot password?</Link></p>}
     <p className="auth-switch">{registering ? "Already have an account?" : "New to ResumeCraft?"} <Link href={registering ? "/login" : "/register"}>{registering ? "Sign in" : "Create an account"}</Link></p>
   </section>;
 }
