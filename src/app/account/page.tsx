@@ -22,7 +22,7 @@ async function AccountPageContent() {
   if (!user) redirect("/login?next=/account");
   const [requests, resumes, content] = await Promise.all([
     getResumeRequests(user.id),
-    getGeneratedResumes(user.id),
+    getGeneratedResumes(),
     getSiteContent(),
   ]);
   const planName = content.plans.find((plan) => plan.id === user.plan)?.name ?? user.plan;
