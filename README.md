@@ -86,6 +86,26 @@ The import is idempotent for matching record IDs. It migrates users, resume requ
 
 Generated resume files are stored as PostgreSQL `bytea` to keep this first backend portable without requiring a separate object-storage account. This is straightforward for modest usage; if file volume grows, replace it with an S3-compatible object store behind the API.
 
+## Docker Compose
+
+The root `Dockerfile` builds the Next.js frontend as a standalone, non-root container. `apps/api/Dockerfile` builds the NestJS API as a non-root container. Compose publishes only the frontend port; the API is reachable to it over the private Compose network. PostgreSQL remains external, so configure the API to use Neon or another PostgreSQL service.
+
+1. Copy `apps/api/.env.example` to `apps/api/.env` and set the database URL, authentication secrets, and required admin credentials. Do not commit this file.
+2. Build both images and apply the database migrations:
+
+   ```powershell
+   docker compose build
+   docker compose run --rm api npm run migration:run:prod
+   ```
+
+3. Start the stack:
+
+   ```powershell
+   docker compose up -d
+   ```
+
+The frontend is available at `http://localhost:3000` (override with `WEB_PORT`). Its API origin is compiled as `http://api:3001` for the private Compose network; `NEST_API_ALLOW_INTERNAL_HTTP` permits that exact service origin only. For non-Docker production deployments, use HTTPS and do not enable that flag. To stop the containers, run `docker compose down`.
+
 ## Deploying
 
 ### Vercel
