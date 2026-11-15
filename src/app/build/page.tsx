@@ -22,7 +22,7 @@ export default async function BuildPage({
 async function BuildPageContent({ requestId }: { requestId?: string }) {
   const user = await getCurrentUser();
   if (!user) redirect("/login?next=/build");
-  const foundRequest = requestId ? await getResumeRequestById(requestId, user.id) : null;
+  const foundRequest = requestId ? await getResumeRequestById(requestId) : null;
   if (requestId && !foundRequest) redirect("/account");
   const initialRequest = foundRequest ?? undefined;
   const content = await getSiteContent();

@@ -1,10 +1,16 @@
 import type { NextConfig } from "next";
+import { getBackendOrigin } from "./src/lib/backend-origin";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
   cacheComponents: true,
   partialPrefetching: true,
-  serverExternalPackages: ["pdf-parse", "@napi-rs/canvas"],
+  async rewrites() {
+    return [{
+      source: "/api/:path*",
+      destination: `${getBackendOrigin()}/api/:path*`,
+    }];
+  },
   turbopack: {
     rules: {
       "*.css": {
