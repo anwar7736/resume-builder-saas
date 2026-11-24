@@ -392,7 +392,8 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .price-card h3 { margin: 0 0 5px; font-size: 17px; }
 .price { margin: 14px 0 5px; font-size: 30px; }
 .plan-limit { margin: 0; color: #5548c4; font-size: 12px; font-weight: 700; }
-.price-card .check-list { flex: 1; align-content: start; gap: 9px; padding: 15px 0 16px; margin: 12px 0; }
+.pricing-grid { align-items: start; }
+.price-card .check-list { align-content: start; gap: 9px; padding: 15px 0 16px; margin: 12px 0; }
 .plan-cta, .plan-current { width: 100%; }
 .plan-current { color: #5042bd; background: #f5f3ff; }
 .checkout-form { display: grid; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }

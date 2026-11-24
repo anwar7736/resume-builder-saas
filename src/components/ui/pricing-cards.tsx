@@ -33,7 +33,7 @@ export function PricingCards({
   const amounts = new Map(checkoutPlans.map((plan) => [plan.id, plan]));
   const hasPermanentPaidPlan = Boolean(currentPlan && currentPlan !== "Free" && !currentPlanExpiresAt);
 
-  return <div className="grid-3">{plans.map((plan, index) => {
+  return <div className="grid-3 pricing-grid">{plans.map((plan, index) => {
     const checkout = amounts.get(plan.id as CheckoutPlan["id"]);
     const isPaid = plan.id !== "Free";
     return <article className={`card price-card${index === 1 ? " featured" : ""}`} key={plan.name}>
