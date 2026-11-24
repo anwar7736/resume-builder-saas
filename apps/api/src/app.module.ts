@@ -21,7 +21,7 @@ import { SiteContentModule } from "./site-content/site-content.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: ["../../.env.local", ".env"] }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: [".env.local", "../.env.local", ".env"] }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

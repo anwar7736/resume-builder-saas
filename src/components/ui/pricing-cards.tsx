@@ -16,7 +16,7 @@ type Props = {
 };
 
 function formatBdt(amount: number) {
-  return `৳${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
+  return `BDT ${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
 }
 
 export function PricingCards({

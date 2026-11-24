@@ -63,9 +63,9 @@ export const defaultSiteContent: SiteContent = {
     ],
   },
   plans: [
-    { id: "Free", name: "Free", price: "$0", period: " forever", description: "A simple place to begin.", resumeLimit: 1, features: ["1 resume request", "Career information form", "Account dashboard"] },
-    { id: "Premium", name: "Premium", price: "৳500", period: " / month", description: "More room to shape your story.", resumeLimit: 5, features: ["Up to 5 resume requests", "Manage multiple applications", "Everything in Free"] },
-    { id: "Platinum", name: "Platinum", price: "৳1,000", period: " / month", description: "More flexibility for every next step.", resumeLimit: null, features: ["Unlimited resume requests", "Everything in Premium", "Priority request handling"] },
+    { id: "Free", name: "Free", price: "BDT 0", period: " forever", description: "A simple place to begin.", resumeLimit: 1, features: ["1 resume request", "Career information form", "Account dashboard"] },
+    { id: "Premium", name: "Premium", price: "BDT 500", period: " / month", description: "More room to shape your story.", resumeLimit: 5, features: ["Up to 5 resume requests", "Manage multiple applications", "Everything in Free"] },
+    { id: "Platinum", name: "Platinum", price: "BDT 1,000", period: " / month", description: "More flexibility for every next step.", resumeLimit: null, features: ["Unlimited resume requests", "Everything in Premium", "Priority request handling"] },
   ],
   about: {
     eyebrow: "Our purpose",

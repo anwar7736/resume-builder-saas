@@ -9,15 +9,27 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { DataSource, Repository } from "typeorm";
 import { isRecord, newId } from "../common/identity";
 import { PaymentTransactionEntity, UserEntity } from "../database/entities";
+import { SettingsService } from "../settings/settings.service";
 
 type PaidPlan = "Premium" | "Platinum";
-const defaultAmounts: Record<PaidPlan, string> = {
-  Premium: "500",
-  Platinum: "1000",
-};
 
 function isPaidPlan(value: unknown): value is PaidPlan {
   return value === "Premium" || value === "Platinum";
+}
+
+function packageAmountBdt(plan: PaidPlan, price: string) {
+  const match = /^(?:৳\s*|BDT\s*)?((?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d{1,2})?)(?:\s*BDT)?$/i.exec(price.trim());
+  if (!match) {
+    throw new ServiceUnavailableException(
+      `${plan} package price must be a positive BDT amount, such as BDT 500.`,
+    );
+  }
+  const amount = match[1].replace(/,/g, "");
+  const numericAmount = Number(amount);
+  if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 99_999_999.99) {
+    throw new ServiceUnavailableException(`${plan} package price is outside the supported BDT range.`);
+  }
+  return amount;
 }
 
 function amountInPaisa(value: unknown) {
@@ -46,14 +58,19 @@ export class PaymentsService {
     private readonly users: Repository<UserEntity>,
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
+    private readonly settings: SettingsService,
   ) {}
 
-  getPlans() {
+  async getPlans() {
     const enabled = this.isConfigured();
+    const content = await this.settings.getSiteContent();
     return {
       plans: (["Premium", "Platinum"] as const).map((id) => ({
         id,
-        amountBdt: Number(this.getAmount(id)),
+        amountBdt: Number(packageAmountBdt(
+          id,
+          content.plans.find((plan) => plan.id === id)?.price ?? "",
+        )),
         enabled,
       })),
     };
@@ -90,7 +107,12 @@ export class PaymentsService {
     }
 
     const transactionId = newId();
-    const amount = this.getAmount(payload.plan);
+    const content = await this.settings.getSiteContent();
+    const packagePlan = content.plans.find((plan) => plan.id === payload.plan);
+    if (!packagePlan) {
+      throw new ServiceUnavailableException(`${payload.plan} package price is not configured.`);
+    }
+    const amount = packageAmountBdt(payload.plan, packagePlan.price);
     await this.payments.save(this.payments.create({
       id: newId(),
       userId,
@@ -242,15 +264,6 @@ export class PaymentsService {
     } catch {
       return null;
     }
-  }
-
-  private getAmount(plan: PaidPlan) {
-    const key = `SSLCOMMERZ_${plan.toUpperCase()}_AMOUNT_BDT`;
-    const value = this.config.get<string>(key)?.trim() || defaultAmounts[plan];
-    if (!/^\d{1,7}(?:\.\d{1,2})?$/.test(value) || Number(value) <= 0) {
-      throw new ServiceUnavailableException(`${key} must be a positive BDT amount with up to two decimals.`);
-    }
-    return value;
   }
 
   private isLive() {

@@ -10,8 +10,9 @@ export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
   @Get("plans")
-  getPlans(@Res() response: Response) {
-    return response.setHeader("Cache-Control", "no-store").status(200).json(this.payments.getPlans());
+  async getPlans(@Res() response: Response) {
+    const result = await this.payments.getPlans();
+    return response.setHeader("Cache-Control", "no-store").status(200).json(result);
   }
 
   @Post("checkout")
