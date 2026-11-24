@@ -64,7 +64,7 @@ The UI and component design stay in Next.js. Existing browser calls such as `fet
 | `SSLCOMMERZ_IS_LIVE` | No | `false` uses the SSLCommerz sandbox; set `true` only for production credentials. |
 | `PORT` | No | API port; defaults to `3001`. |
 
-Checkout amounts are read from the Premium and Platinum package prices in site content (the defaults are BDT 500 and BDT 1,000 per month). Use a package price such as `BDT 500`; no payment amount environment variables are used. Each verified payment grants one month of access; there is no automatic recurring charge. Apply the `AddPlanPayments1720000000000` and `UpdateLegacyPackagePrices1730000000000` migrations before enabling checkout. Successful returns and IPN callbacks are validated against SSLCommerz before the plan is activated.
+Checkout amounts are read from the Premium and Platinum package prices in site content (the defaults are BDT 500 and BDT 1,000 per month). Use a package price such as `BDT 500`; no payment amount environment variables are used. Each verified payment grants one month of access; there is no automatic recurring charge. Apply the `AddPlanPayments1720000000000`, `UpdateLegacyPackagePrices1730000000000`, and `ConvertDollarPackagePricesToBdt1740000000000` migrations before enabling checkout. Successful returns and IPN callbacks are validated against SSLCommerz before the plan is activated.
 
 `MONGODB_URI`, `MONGODB_DB`, and `ALLOW_MONGODB_IMPORT=true` are only needed for the one-time data import described below.
 
