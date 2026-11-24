@@ -15,6 +15,9 @@ type Props = {
   authenticated?: boolean;
 };
 
+type CheckoutField = "phone" | "address" | "city" | "postcode";
+type CheckoutErrors = Partial<Record<CheckoutField, string>>;
+
 function formatBdt(amount: number) {
   return `BDT ${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
 }
@@ -68,11 +71,41 @@ export function PricingCards({
 
 function CheckoutForm({ plan, onCancel }: { plan: CheckoutPlan["id"]; onCancel: () => void }) {
   const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState<CheckoutErrors>({});
   const toast = useToast();
+
+  function clearError(field: CheckoutField) {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const values = Object.fromEntries(new FormData(event.currentTarget).entries());
+    const formData = new FormData(event.currentTarget);
+    const value = (field: CheckoutField) => String(formData.get(field) ?? "").trim();
+    const errors: CheckoutErrors = {};
+    if (!value("phone")) errors.phone = "Enter your mobile number.";
+    if (!value("address")) errors.address = "Enter your billing address.";
+    if (!value("city")) errors.city = "Enter your city.";
+    const postcode = value("postcode");
+    if (!postcode) {
+      errors.postcode = "Enter your postcode.";
+    } else if (!/^[0-9]{4,10}$/.test(postcode)) {
+      errors.postcode = "Enter a postcode with 4–10 digits.";
+    }
+    setErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const values = {
+      phone: value("phone"),
+      address: value("address"),
+      city: value("city"),
+      postcode,
+    };
     setBusy(true);
     try {
       const response = await fetch("/api/payments/checkout", {
@@ -104,13 +137,29 @@ function CheckoutForm({ plan, onCancel }: { plan: CheckoutPlan["id"]; onCancel: 
     }
   }
 
-  return <form className="checkout-form" onSubmit={submit}>
+  return <form className="checkout-form" noValidate onSubmit={submit}>
     <p>Secure monthly payment via SSLCommerz. Your plan stays active for one month; renewal is manual.</p>
-    <label>Mobile number<input name="phone" type="tel" autoComplete="tel" placeholder="01XXXXXXXXX" required maxLength={20} /></label>
-    <label>Billing address<input name="address" autoComplete="street-address" required maxLength={200} /></label>
+    <div className="checkout-field">
+      <label htmlFor="checkout-phone">Mobile number</label>
+      <input id="checkout-phone" name="phone" type="tel" autoComplete="tel" placeholder="01XXXXXXXXX" required maxLength={20} aria-invalid={Boolean(errors.phone)} aria-describedby={errors.phone ? "checkout-phone-error" : undefined} onChange={() => clearError("phone")} />
+      {errors.phone && <p id="checkout-phone-error" className="checkout-field-error" role="alert">{errors.phone}</p>}
+    </div>
+    <div className="checkout-field">
+      <label htmlFor="checkout-address">Billing address</label>
+      <input id="checkout-address" name="address" autoComplete="street-address" placeholder="House, road, area" required maxLength={200} aria-invalid={Boolean(errors.address)} aria-describedby={errors.address ? "checkout-address-error" : undefined} onChange={() => clearError("address")} />
+      {errors.address && <p id="checkout-address-error" className="checkout-field-error" role="alert">{errors.address}</p>}
+    </div>
     <div className="checkout-form-row">
-      <label>City<input name="city" autoComplete="address-level2" required maxLength={100} /></label>
-      <label>Postcode<input name="postcode" inputMode="numeric" autoComplete="postal-code" required pattern="[0-9]{4,10}" maxLength={10} /></label>
+      <div className="checkout-field">
+        <label htmlFor="checkout-city">City</label>
+        <input id="checkout-city" name="city" autoComplete="address-level2" placeholder="e.g. Dhaka" required maxLength={100} aria-invalid={Boolean(errors.city)} aria-describedby={errors.city ? "checkout-city-error" : undefined} onChange={() => clearError("city")} />
+        {errors.city && <p id="checkout-city-error" className="checkout-field-error" role="alert">{errors.city}</p>}
+      </div>
+      <div className="checkout-field">
+        <label htmlFor="checkout-postcode">Postcode</label>
+        <input id="checkout-postcode" name="postcode" inputMode="numeric" autoComplete="postal-code" placeholder="e.g. 1207" required pattern="[0-9]{4,10}" maxLength={10} aria-invalid={Boolean(errors.postcode)} aria-describedby={errors.postcode ? "checkout-postcode-error" : undefined} onChange={() => clearError("postcode")} />
+        {errors.postcode && <p id="checkout-postcode-error" className="checkout-field-error" role="alert">{errors.postcode}</p>}
+      </div>
     </div>
     <button className="button button-primary plan-cta" type="submit" disabled={busy}>
       {busy ? "Connecting to SSLCommerz..." : "Continue to payment"}
