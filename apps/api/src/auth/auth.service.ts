@@ -62,7 +62,12 @@ export class AuthService {
   }
 
   async updateUser(id: string, input: Pick<UserEntity, "name" | "email" | "plan">) {
-    const result = await this.users.update({ id }, input);
+    const user = await this.users.findOneBy({ id });
+    if (!user) return null;
+    const result = await this.users.update({ id }, {
+      ...input,
+      ...(user.plan !== input.plan ? { planExpiresAt: null } : {}),
+    });
     if (!result.affected) return null;
     return this.findUserById(id);
   }
@@ -216,11 +221,13 @@ export class AuthService {
   }
 
   private toAccount(user: UserEntity) {
+    const plan = user.planExpiresAt && user.planExpiresAt <= new Date() ? "Free" : user.plan;
     return {
       id: user.id,
       name: user.name,
       email: user.email,
-      plan: user.plan,
+      plan,
+      planExpiresAt: plan === "Free" ? null : user.planExpiresAt?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
       resumeCount: user.resumeCount,
     };

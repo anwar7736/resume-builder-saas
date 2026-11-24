@@ -52,8 +52,9 @@ export class ResumeService {
       const user = await users.findOneBy({ id: input.userId });
       if (!user) return { request: null, limit: 0 };
       const content = await this.settings.getSiteContent();
-      const plan = content.plans.find((item) => item.id === user.plan);
-      if (!plan) throw new Error(`The ${user.plan} plan is missing from site settings.`);
+      const activePlan = user.planExpiresAt && user.planExpiresAt <= new Date() ? "Free" : user.plan;
+      const plan = content.plans.find((item) => item.id === activePlan);
+      if (!plan) throw new Error(`The ${activePlan} plan is missing from site settings.`);
       const limit = plan.resumeLimit;
       const update = users.createQueryBuilder()
         .update(UserEntity)

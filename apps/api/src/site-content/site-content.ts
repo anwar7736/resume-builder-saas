@@ -40,8 +40,8 @@ export const defaultSiteContent: SiteContent = {
     processEyebrow: "How it works",
     plansEyebrow: "Simple plans",
     plansTitle: "A plan for your next step.",
-    plansDescription: "Start free and choose the level of room you need. Plan upgrades are managed by the site team.",
-    plansDisclaimer: "Online checkout is not enabled. Premium and Platinum plans are assigned by an administrator.",
+    plansDescription: "Start free, then upgrade with secure monthly checkout when you need more room.",
+    plansDisclaimer: "Paid plans last one month per successful payment. They do not renew automatically.",
     faqTitle: "Frequently asked questions.",
     ctaEyebrow: "Your experience deserves a great introduction",
     ctaTitle: "Ready to build your resume?",
@@ -64,8 +64,8 @@ export const defaultSiteContent: SiteContent = {
   },
   plans: [
     { id: "Free", name: "Free", price: "$0", period: " forever", description: "A simple place to begin.", resumeLimit: 1, features: ["1 resume request", "Career information form", "Account dashboard"] },
-    { id: "Premium", name: "Premium", price: "$8", period: " / month", description: "More room to shape your story.", resumeLimit: 5, features: ["Up to 5 resume requests", "Manage multiple applications", "Everything in Free"] },
-    { id: "Platinum", name: "Platinum", price: "$16", period: " / month", description: "More flexibility for every next step.", resumeLimit: null, features: ["Unlimited resume requests", "Everything in Premium", "Priority request handling"] },
+    { id: "Premium", name: "Premium", price: "৳500", period: " / month", description: "More room to shape your story.", resumeLimit: 5, features: ["Up to 5 resume requests", "Manage multiple applications", "Everything in Free"] },
+    { id: "Platinum", name: "Platinum", price: "৳1,000", period: " / month", description: "More flexibility for every next step.", resumeLimit: null, features: ["Unlimited resume requests", "Everything in Premium", "Priority request handling"] },
   ],
   about: {
     eyebrow: "Our purpose",
@@ -124,13 +124,13 @@ export const defaultSiteContent: SiteContent = {
     termsDescription: "These draft terms should be reviewed and updated before publication.",
     termsSections: [
       { title: "About the service", text: "The service lets registered users submit and track resume requests." },
-      { title: "Plans", text: "Plan limits are enforced by the service. Online checkout is not currently enabled." },
+      { title: "Plans", text: "Paid plans are active for one month per successful payment and do not renew automatically." },
     ],
   },
   faqs: [
     { question: "How do I build a resume?", answer: "Create an account, choose a plan, then submit your career information from the Build Resume page." },
     { question: "What is included in the Free plan?", answer: "The Free plan includes one resume request. You can see your current plan and requests from your account." },
-    { question: "Can I upgrade my plan?", answer: "Online checkout is not enabled. Contact the site administrator about a plan change." },
+    { question: "Can I upgrade my plan?", answer: "Choose Premium or Platinum on the Plans page and pay securely. Plans do not renew automatically." },
   ],
 };
 

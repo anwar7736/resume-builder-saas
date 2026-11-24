@@ -37,6 +37,7 @@ export type UserAccount = {
   name: string;
   email: string;
   plan: AccountPlan;
+  planExpiresAt: string | null;
   createdAt: string;
   resumeCount: number;
 };
@@ -61,9 +62,20 @@ export type AdminSettings = {
   content: SiteContent;
 };
 
+export type CheckoutPlan = {
+  id: "Premium" | "Platinum";
+  amountBdt: number;
+  enabled: boolean;
+};
+
 export async function getSiteContent() {
   const result = await backendApiRequest<{ content: SiteContent }>("/site-content/full");
   return result.content;
+}
+
+export async function getCheckoutPlans() {
+  const result = await backendApiRequest<{ plans: CheckoutPlan[] }>("/payments/plans");
+  return result.plans;
 }
 
 export async function getResumeRequests(userId?: string) {

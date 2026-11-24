@@ -28,6 +28,9 @@ export class UserEntity {
   @Column({ type: "varchar", length: 20, default: "Free" })
   plan!: "Free" | "Premium" | "Platinum";
 
+  @Column({ name: "plan_expires_at", type: "timestamptz", nullable: true })
+  planExpiresAt!: Date | null;
+
   @CreateDateColumn({ name: "created_at", type: "timestamptz" })
   createdAt!: Date;
 
@@ -45,6 +48,41 @@ export class UserEntity {
 
   @Column({ name: "two_factor_last_counter", type: "bigint", nullable: true })
   twoFactorLastCounter!: string | null;
+}
+
+@Entity({ name: "payment_transactions" })
+@Index("payment_transactions_transaction_id_unique", ["transactionId"], { unique: true })
+@Index("payment_transactions_user_id_idx", ["userId"])
+export class PaymentTransactionEntity {
+  @PrimaryColumn({ type: "varchar", length: 24 })
+  id!: string;
+
+  @Column({ name: "user_id", type: "varchar", length: 24 })
+  userId!: string;
+
+  @Column({ type: "varchar", length: 20 })
+  plan!: "Premium" | "Platinum";
+
+  @Column({ name: "transaction_id", type: "varchar", length: 24 })
+  transactionId!: string;
+
+  @Column({ type: "numeric", precision: 10, scale: 2 })
+  amount!: string;
+
+  @Column({ type: "varchar", length: 3, default: "BDT" })
+  currency!: string;
+
+  @Column({ type: "varchar", length: 20, default: "pending" })
+  status!: "pending" | "paid" | "failed" | "cancelled";
+
+  @CreateDateColumn({ name: "created_at", type: "timestamptz" })
+  createdAt!: Date;
+
+  @Column({ name: "paid_at", type: "timestamptz", nullable: true })
+  paidAt!: Date | null;
+
+  @Column({ name: "expires_at", type: "timestamptz", nullable: true })
+  expiresAt!: Date | null;
 }
 
 @Entity({ name: "resume_requests" })

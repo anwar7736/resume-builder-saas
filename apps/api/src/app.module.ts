@@ -9,17 +9,19 @@ import {
   ContactMessageEntity,
   GeneratedResumeEntity,
   PasswordResetTokenEntity,
+  PaymentTransactionEntity,
   ResumeRequestEntity,
   SecurityRateLimitEntity,
   UserEntity,
 } from "./database/entities";
 import { HealthController } from "./health.controller";
 import { ResumesModule } from "./resumes/resumes.module";
+import { PaymentsModule } from "./payments/payments.module";
 import { SiteContentModule } from "./site-content/site-content.module";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: ["../../.env.local", ".env"] }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -38,6 +40,7 @@ import { SiteContentModule } from "./site-content/site-content.module";
           AppSettingsEntity,
           SecurityRateLimitEntity,
           PasswordResetTokenEntity,
+          PaymentTransactionEntity,
         ],
         synchronize: false,
         retryAttempts: 2,
@@ -48,6 +51,7 @@ import { SiteContentModule } from "./site-content/site-content.module";
     AdminModule,
     ContactModule,
     ResumesModule,
+    PaymentsModule,
     SiteContentModule,
   ],
   controllers: [HealthController],

@@ -48,8 +48,30 @@ export class SettingsService {
   async getSiteContent(): Promise<SiteContent> {
     const content = (await this.getSettings())?.content;
     if (!isSiteContent(content)) return defaultSiteContent;
+    const home = { ...content.home };
+    if (home.plansDescription ===
+        "Start free and choose the level of room you need. Plan upgrades are managed by the site team.") {
+      home.plansDescription = defaultSiteContent.home.plansDescription;
+    }
+    if (home.plansDisclaimer ===
+        "Online checkout is not enabled. Premium and Platinum plans are assigned by an administrator.") {
+      home.plansDisclaimer = defaultSiteContent.home.plansDisclaimer;
+    }
+    const legacyUpgradeAnswer = "Online checkout is not enabled. Contact the site administrator about a plan change.";
+    const faqs = content.faqs.map((faq) =>
+      faq.question === "Can I upgrade my plan?" && faq.answer === legacyUpgradeAnswer
+        ? { ...faq, answer: defaultSiteContent.faqs.find((item) => item.question === faq.question)?.answer ?? faq.answer }
+        : faq);
+    const legacyPlanTerms = "Plan limits are enforced by the service. Online checkout is not currently enabled.";
+    const termsSections = content.legal.termsSections.map((section) =>
+      section.title === "Plans" && section.text === legacyPlanTerms
+        ? { ...section, text: defaultSiteContent.legal.termsSections.find((item) => item.title === section.title)?.text ?? section.text }
+        : section);
     return {
       ...content,
+      home,
+      faqs,
+      legal: { ...content.legal, termsSections },
       contact: { ...defaultSiteContent.contact, ...content.contact },
     };
   }

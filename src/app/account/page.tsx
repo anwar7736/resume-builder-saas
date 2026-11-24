@@ -32,7 +32,7 @@ async function AccountPageContent() {
       <AccountActions />
     </header>
     <div className="account-summary">
-      <article className="card account-stat"><span>Current plan</span><strong>{planName}</strong><Link href="/pricing">View plans</Link></article>
+      <article className="card account-stat"><span>Current plan</span><strong>{planName}</strong>{user.planExpiresAt && <small>Active until {new Date(user.planExpiresAt).toLocaleDateString()} · renew manually</small>}<Link href="/pricing">View plans</Link></article>
       <article className="card account-stat"><span>Resume requests</span><strong>{user.resumeCount}</strong><small>Used so far</small></article>
       <Link className="card account-build-card" href="/build"><span className="feature-icon">+</span><strong>Build a resume</strong><small>Share your career information</small></Link>
     </div>

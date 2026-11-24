@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { ArrowRight, Check, FileText, Mail, ShieldCheck, Sparkles, WandSparkles } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button-link";
-import { getSiteContent } from "@/lib/resume-store";
+import { getCheckoutPlans, getSiteContent } from "@/lib/resume-store";
+import { getCurrentUser } from "@/lib/user-auth";
 import { PricingCards } from "@/components/ui/pricing-cards";
 
 export default function Home() {
@@ -13,7 +14,11 @@ export default function Home() {
 
 async function HomeContent() {
   await connection();
-  const content = await getSiteContent();
+  const [content, checkoutPlans, user] = await Promise.all([
+    getSiteContent(),
+    getCheckoutPlans(),
+    getCurrentUser(),
+  ]);
   const icons = { FileText, Sparkles, ShieldCheck };
   return <>
     <section className="hero">
@@ -53,7 +58,7 @@ async function HomeContent() {
     <section className="section">
       <div className="container">
         <div className="section-heading"><span className="eyebrow">{content.home.plansEyebrow}</span><h2 className="heading">{content.home.plansTitle}</h2><p className="subheading">{content.home.plansDescription}</p></div>
-        <PricingCards plans={content.plans} />
+        <PricingCards plans={content.plans} currentPlan={user?.plan} currentPlanExpiresAt={user?.planExpiresAt} authenticated={Boolean(user)} checkoutPlans={checkoutPlans} />
       </div>
     </section>
     {content.faqs.length > 0 && <section className="section soft-section">

@@ -39,7 +39,7 @@ The UI and component design stay in Next.js. Existing browser calls such as `fet
    npm run dev
    ```
 
-   Local frontend configuration defaults to `NEST_API_URL=http://localhost:3001`.
+   Local frontend configuration defaults to `NEST_API_URL=http://localhost:3001`. For local SSLCommerz sandbox testing, set the store credentials in the root `.env.local`; the API loads that file when started from `apps/api`.
 
 ## Environment variables
 
@@ -58,7 +58,15 @@ The UI and component design stay in Next.js. Existing browser calls such as `fet
 | `RESEND_API_KEY` | For email | Resend API key for contact and password-reset mail. |
 | `EMAIL_FROM` | For email | Sender address verified with Resend. |
 | `FRONTEND_ORIGINS` | For direct cross-origin API calls | Comma-separated allowed origins; not needed when using the same-origin rewrite. |
+| `FRONTEND_URL` | For payment callbacks | Public frontend origin used by SSLCommerz to return customers and send callbacks. Use HTTPS in production. |
+| `SSLCOMMERZ_STORE_ID` | For plan checkout | SSLCommerz merchant store ID; keep server-side only. |
+| `SSLCOMMERZ_STORE_PASSWORD` | For plan checkout | SSLCommerz API password; keep server-side only. |
+| `SSLCOMMERZ_IS_LIVE` | No | `false` uses the SSLCommerz sandbox; set `true` only for production credentials. |
+| `SSLCOMMERZ_PREMIUM_AMOUNT_BDT` | No | Server-controlled Premium amount in BDT; defaults to `500`. |
+| `SSLCOMMERZ_PLATINUM_AMOUNT_BDT` | No | Server-controlled Platinum amount in BDT; defaults to `1000`. |
 | `PORT` | No | API port; defaults to `3001`. |
+
+Premium and Platinum checkout charges BDT 500 and BDT 1,000 per month by default. Each verified payment grants one month of access; there is no automatic recurring charge. Apply the `AddPlanPayments1720000000000` migration before enabling checkout. Successful returns and IPN callbacks are validated against SSLCommerz before the plan is activated.
 
 `MONGODB_URI`, `MONGODB_DB`, and `ALLOW_MONGODB_IMPORT=true` are only needed for the one-time data import described below.
 

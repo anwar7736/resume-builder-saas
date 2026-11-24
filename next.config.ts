@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { getBackendOrigin } from "./src/lib/backend-origin";
 
 const nextConfig: NextConfig = {
+  experimental: { agentUpgrade: "security" },
   output: process.env.NEXT_OUTPUT_STANDALONE === "true" ? "standalone" : undefined,
   cacheComponents: true,
   partialPrefetching: true,

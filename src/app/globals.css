@@ -395,6 +395,14 @@ textarea.form-field { min-height: 135px; resize: vertical; }
 .price-card .check-list { flex: 1; }
 .plan-cta, .plan-current { width: 100%; }
 .plan-current { color: #5042bd; background: #f5f3ff; }
+.checkout-form { display: grid; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border, #eceaf2); }
+.checkout-form p { margin: 0; color: var(--muted, #777); font-size: 13px; line-height: 1.6; }
+.checkout-form label { display: grid; gap: 6px; color: var(--text, #292733); font-size: 12px; font-weight: 650; }
+.checkout-form input { width: 100%; min-width: 0; padding: 10px 11px; border: 1px solid var(--border, #dedce6); border-radius: 9px; color: inherit; background: transparent; font: inherit; font-weight: 400; }
+.checkout-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.checkout-cancel { padding: 6px; border: 0; color: var(--muted, #777); background: transparent; font: inherit; font-size: 13px; cursor: pointer; }
+.payment-status { max-width: 1120px; margin: 16px auto; padding: 14px 18px; border: 1px solid #c8e8d7; border-radius: 12px; color: #17613a; background: #effaf3; }
+.payment-status-failed, .payment-status-cancelled, .payment-status-verification_error { border-color: #f0d7b4; color: #79500d; background: #fff8eb; }
 .pricing-disclaimer { margin: 24px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
 .plan-limit-card { max-width: 680px; padding: 42px; margin: 0 auto; text-align: center; }
 .plan-limit-card .heading { font-size: clamp(30px, 4vw, 42px); }
