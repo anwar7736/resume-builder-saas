@@ -247,13 +247,13 @@ export class PaymentsService {
     if (!response.ok) throw new Error(`SSLCommerz validation returned HTTP ${response.status}.`);
     const result: unknown = await response.json();
     if (!isRecord(result) || !["VALID", "VALIDATED"].includes(String(result.status)) ||
+        result.val_id !== validationId ||
         result.tran_id !== payment.transactionId ||
         String(result.currency).toUpperCase() !== payment.currency ||
         amountInPaisa(result.amount) !== amountInPaisa(payment.amount)) {
       return false;
     }
-    const expectedStoreId = this.config.getOrThrow<string>("SSLCOMMERZ_STORE_ID").trim();
-    return typeof result.store_id === "string" && result.store_id === expectedStoreId;
+    return true;
   }
 
   private validateGatewayUrl(value: string) {
