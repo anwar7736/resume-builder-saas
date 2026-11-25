@@ -94,17 +94,19 @@ export class PaymentsService {
       throw new BadRequestException("Enter a valid Bangladesh mobile number and billing address.");
     }
 
-    this.requireConfiguration();
     const user = await this.users.findOneBy({ id: userId });
     if (!user) throw new BadRequestException("Your account could not be found. Please sign in again.");
-    const currentPlan = user.planExpiresAt && user.planExpiresAt <= new Date() ? "Free" : user.plan;
+    const now = new Date();
+    const currentPlan = user.planExpiresAt && user.planExpiresAt <= now ? "Free" : user.plan;
     if (currentPlan !== "Free" && !user.planExpiresAt) {
       throw new BadRequestException("Your current plan was assigned without an expiry. Contact support to change it.");
     }
-    const planRank = { Free: 0, Premium: 1, Platinum: 2 } as const;
-    if (planRank[payload.plan] < planRank[currentPlan]) {
-      throw new BadRequestException("Your current plan is higher. You can renew it from the Plans page.");
+    if (currentPlan !== "Free") {
+      throw new BadRequestException(
+        `Your ${currentPlan} plan is still active. You can make another payment after it expires.`,
+      );
     }
+    this.requireConfiguration();
 
     const transactionId = newId();
     const content = await this.settings.getSiteContent();

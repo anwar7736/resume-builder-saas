@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Check, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useToast } from "@/components/ui/toast-provider";
@@ -43,8 +43,21 @@ export function PricingCards({
   authenticated = false,
 }: Props) {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+  useEffect(() => {
+    const updateTime = () => setCurrentTime(Date.now());
+    updateTime();
+    const interval = window.setInterval(updateTime, 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
+
   const amounts = new Map(checkoutPlans.map((plan) => [plan.id, plan]));
   const hasPermanentPaidPlan = Boolean(currentPlan && currentPlan !== "Free" && !currentPlanExpiresAt);
+  const planExpiresAt = currentPlanExpiresAt ? Date.parse(currentPlanExpiresAt) : Number.NaN;
+  const hasActivePaidPlan = Boolean(
+    currentPlan && currentPlan !== "Free" && currentPlanExpiresAt &&
+    (!Number.isFinite(planExpiresAt) || currentTime === null || planExpiresAt > currentTime),
+  );
 
   return <div className="grid-3 pricing-grid">{plans.map((plan, index) => {
     const checkout = amounts.get(plan.id as CheckoutPlan["id"]);
@@ -64,6 +77,10 @@ export function PricingCards({
           : hasPermanentPaidPlan
             ? <button className="button button-secondary plan-cta" type="button" disabled>
               Contact support to change your plan
+            </button>
+          : hasActivePaidPlan
+            ? <button className="button button-secondary plan-cta" type="button" disabled>
+              Current plan active; pay again after it expires
             </button>
           : !checkout?.enabled
             ? <button className="button button-secondary plan-cta" type="button" disabled>Payments unavailable</button>
