@@ -231,7 +231,7 @@ export class PaymentsService {
   }
 
   getReturnUrl(result: "success" | "failed" | "cancelled" | "verification_error", plan?: PaidPlan) {
-    const url = new URL("/pricing", this.getFrontendOrigin());
+    const url = new URL("/payment/result", this.getFrontendOrigin());
     url.searchParams.set("payment", result);
     if (plan) url.searchParams.set("plan", plan);
     return url.toString();

@@ -563,6 +563,16 @@ body { background: var(--background); color: var(--foreground); }
 .account-auth-page { background: radial-gradient(ellipse at 50% 10%, #34436566 0, transparent 65%); }
 .login-page { background: radial-gradient(ellipse at 50% 10%, #34436566 0, #17191f 60%); }
 .login-layout { border-color: var(--line); background: #20232a; box-shadow: 0 24px 80px #0006; }
+.payment-result-icon { width: 82px; height: 82px; display: grid; place-items: center; margin: 0 auto 24px; border-radius: 50%; font-size: 42px; font-weight: 650; }
+.payment-result-icon.payment-result-success { color: #6ee7b7; background: #064e3b; }
+.payment-result-icon.payment-result-failure { color: #fca5a5; background: #511d25; }
+.payment-result-icon.payment-result-neutral { color: #c4b5fd; background: #30284f; }
+.payment-result-icon.payment-result-warning { color: #fcd34d; background: #493a16; }
+.payment-result-label.payment-result-success { color: #6ee7b7; }
+.payment-result-label.payment-result-failure { color: #fca5a5; }
+.payment-result-label.payment-result-neutral { color: #c4b5fd; }
+.payment-result-label.payment-result-warning { color: #fcd34d; }
+.payment-result-label { margin-bottom: 0; }
 .login-showcase { background: linear-gradient(145deg, #252a35, #20232c 75%, #29263c); }
 .login-field label { color: #d0d2d9; }
 .login-input-wrap { color: #a0a3ad; }
