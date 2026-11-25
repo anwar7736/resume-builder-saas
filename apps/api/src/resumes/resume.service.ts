@@ -1,9 +1,11 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, MoreThan, Repository } from "typeorm";
 import { isDocumentId, newId } from "../common/identity";
+import { resolveEffectivePlan } from "../common/plan-entitlement";
 import {
   GeneratedResumeEntity,
+  PaymentTransactionEntity,
   ResumeRequestEntity,
   UserEntity,
 } from "../database/entities";
@@ -52,7 +54,12 @@ export class ResumeService {
       const user = await users.findOneBy({ id: input.userId });
       if (!user) return { request: null, limit: 0 };
       const content = await this.settings.getSiteContent();
-      const activePlan = user.planExpiresAt && user.planExpiresAt <= new Date() ? "Free" : user.plan;
+      const now = new Date();
+      const activePayment = await manager.getRepository(PaymentTransactionEntity).findOne({
+        where: { userId: user.id, status: "paid", expiresAt: MoreThan(now) },
+        order: { paidAt: "DESC" },
+      });
+      const { plan: activePlan } = resolveEffectivePlan(user, activePayment, now);
       const plan = content.plans.find((item) => item.id === activePlan);
       if (!plan) throw new Error(`The ${activePlan} plan is missing from site settings.`);
       const limit = plan.resumeLimit;

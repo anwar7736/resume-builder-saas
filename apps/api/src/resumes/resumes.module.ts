@@ -2,14 +2,26 @@ import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { AuthModule } from "../auth/auth.module";
 import { UserSessionGuard } from "../common/session.guards";
-import { AppSettingsEntity, GeneratedResumeEntity, ResumeRequestEntity, UserEntity } from "../database/entities";
+import {
+  AppSettingsEntity,
+  GeneratedResumeEntity,
+  PaymentTransactionEntity,
+  ResumeRequestEntity,
+  UserEntity,
+} from "../database/entities";
 import { SettingsModule } from "../settings/settings.module";
 import { ResumeController } from "./resumes.controller";
 import { ResumeService } from "./resume.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AppSettingsEntity, GeneratedResumeEntity, ResumeRequestEntity, UserEntity]),
+    TypeOrmModule.forFeature([
+      AppSettingsEntity,
+      GeneratedResumeEntity,
+      PaymentTransactionEntity,
+      ResumeRequestEntity,
+      UserEntity,
+    ]),
     AuthModule,
     SettingsModule,
   ],

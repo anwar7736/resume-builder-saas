@@ -6,8 +6,9 @@ import {
 } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { InjectRepository } from "@nestjs/typeorm";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, MoreThan, Repository } from "typeorm";
 import { isRecord, newId } from "../common/identity";
+import { resolveEffectivePlan } from "../common/plan-entitlement";
 import { PaymentTransactionEntity, UserEntity } from "../database/entities";
 import { SettingsService } from "../settings/settings.service";
 
@@ -97,8 +98,12 @@ export class PaymentsService {
     const user = await this.users.findOneBy({ id: userId });
     if (!user) throw new BadRequestException("Your account could not be found. Please sign in again.");
     const now = new Date();
-    const currentPlan = user.planExpiresAt && user.planExpiresAt <= now ? "Free" : user.plan;
-    if (currentPlan !== "Free" && !user.planExpiresAt) {
+    const activePayment = await this.payments.findOne({
+      where: { userId, status: "paid", expiresAt: MoreThan(now) },
+      order: { paidAt: "DESC" },
+    });
+    const { plan: currentPlan, planExpiresAt } = resolveEffectivePlan(user, activePayment, now);
+    if (currentPlan !== "Free" && !planExpiresAt) {
       throw new BadRequestException("Your current plan was assigned without an expiry. Contact support to change it.");
     }
     if (currentPlan !== "Free") {

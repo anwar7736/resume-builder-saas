@@ -6,6 +6,7 @@ import { AdminSessionGuard } from "../common/session.guards";
 import {
   AppSettingsEntity,
   PasswordResetTokenEntity,
+  PaymentTransactionEntity,
   SecurityRateLimitEntity,
   UserEntity,
 } from "../database/entities";
@@ -19,6 +20,7 @@ import { AuthService } from "./auth.service";
     TypeOrmModule.forFeature([
       AppSettingsEntity,
       PasswordResetTokenEntity,
+      PaymentTransactionEntity,
       SecurityRateLimitEntity,
       UserEntity,
     ]),

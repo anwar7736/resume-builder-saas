@@ -1,12 +1,14 @@
 import { ConflictException, Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { createHmac } from "node:crypto";
-import { Repository } from "typeorm";
+import { In, MoreThan, Repository } from "typeorm";
 import { decryptSecret, encryptSecret, hashPassword } from "../common/auth-crypto";
 import { newId } from "../common/identity";
+import { resolveEffectivePlan } from "../common/plan-entitlement";
 import { RateLimitService } from "../common/rate-limit.service";
 import {
   PasswordResetTokenEntity,
+  PaymentTransactionEntity,
   UserEntity,
 } from "../database/entities";
 import { SettingsService } from "../settings/settings.service";
@@ -16,6 +18,8 @@ export class AuthService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly users: Repository<UserEntity>,
+    @InjectRepository(PaymentTransactionEntity)
+    private readonly payments: Repository<PaymentTransactionEntity>,
     @InjectRepository(PasswordResetTokenEntity)
     private readonly resetTokens: Repository<PasswordResetTokenEntity>,
     private readonly rateLimits: RateLimitService,
@@ -53,12 +57,32 @@ export class AuthService {
 
   async findUserById(id: string) {
     const user = await this.users.findOneBy({ id });
-    return user ? this.toAccount(user) : null;
+    if (!user) return null;
+    const now = new Date();
+    const activePayment = await this.payments.findOne({
+      where: { userId: id, status: "paid", expiresAt: MoreThan(now) },
+      order: { paidAt: "DESC" },
+    });
+    return this.toAccount(user, activePayment);
   }
 
   async getUsers() {
     const users = await this.users.find({ order: { createdAt: "DESC" } });
-    return users.map((user) => this.toAccount(user));
+    if (users.length === 0) return [];
+    const now = new Date();
+    const activePayments = await this.payments.find({
+      where: {
+        userId: In(users.map((user) => user.id)),
+        status: "paid",
+        expiresAt: MoreThan(now),
+      },
+      order: { paidAt: "DESC" },
+    });
+    const paymentByUser = new Map<string, PaymentTransactionEntity>();
+    for (const payment of activePayments) {
+      if (!paymentByUser.has(payment.userId)) paymentByUser.set(payment.userId, payment);
+    }
+    return users.map((user) => this.toAccount(user, paymentByUser.get(user.id) ?? null));
   }
 
   async updateUser(id: string, input: Pick<UserEntity, "name" | "email" | "plan">) {
@@ -220,14 +244,14 @@ export class AuthService {
     return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
   }
 
-  private toAccount(user: UserEntity) {
-    const plan = user.planExpiresAt && user.planExpiresAt <= new Date() ? "Free" : user.plan;
+  private toAccount(user: UserEntity, activePayment: PaymentTransactionEntity | null = null) {
+    const { plan, planExpiresAt } = resolveEffectivePlan(user, activePayment, new Date());
     return {
       id: user.id,
       name: user.name,
       email: user.email,
       plan,
-      planExpiresAt: plan === "Free" ? null : user.planExpiresAt?.toISOString() ?? null,
+      planExpiresAt: planExpiresAt?.toISOString() ?? null,
       createdAt: user.createdAt.toISOString(),
       resumeCount: user.resumeCount,
     };
