@@ -18,6 +18,19 @@ type Props = {
 type CheckoutField = "phone" | "address" | "city" | "postcode";
 type CheckoutErrors = Partial<Record<CheckoutField, string>>;
 
+function checkoutErrorMessage(result: unknown) {
+  if (typeof result !== "object" || result === null) return "Unable to start the payment.";
+  if ("message" in result) {
+    if (typeof result.message === "string") return result.message;
+    if (Array.isArray(result.message) && result.message.every((item) => typeof item === "string")) {
+      return result.message.join(" ");
+    }
+  }
+  return "error" in result && typeof result.error === "string"
+    ? result.error
+    : "Unable to start the payment.";
+}
+
 function formatBdt(amount: number) {
   return `BDT ${amount.toLocaleString("en-BD", { maximumFractionDigits: 2 })}`;
 }
@@ -115,9 +128,7 @@ function CheckoutForm({ plan, onCancel }: { plan: CheckoutPlan["id"]; onCancel: 
       });
       const result: unknown = await response.json();
       if (!response.ok) {
-        const message = typeof result === "object" && result !== null && "error" in result &&
-          typeof result.error === "string" ? result.error : "Unable to start the payment.";
-        toast.error(message);
+        toast.error(checkoutErrorMessage(result));
         return;
       }
       const redirectUrl = typeof result === "object" && result !== null &&
